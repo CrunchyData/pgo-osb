@@ -1,0 +1,13 @@
+# Default values for the broker-skeleton
+# Image to use
+image: quay.io/osb-starter-pack/servicebroker:latest
+# ImagePullPolicy; valid values are "IfNotPresent", "Never", and "Always"
+imagePullPolicy: Always
+authenticate: false
+# Certificate details to use for TLS. Leave blank to not use TLS
+tls:
+  # base-64 encoded PEM data for the TLS certificate
+  cert:
+  # base-64 encoded PEM data for the private key matching the certificate
+  key:
+deployClusterServiceBroker: true

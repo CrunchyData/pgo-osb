@@ -1,0 +1,42 @@
+image::crunchy_logo.png[Crunchy Data Logo]
+
+Latest Release: v3.1, {docdate}
+
+== General
+
+The *pgo-osb* project is an implementation of the Open Service Broker
+API.  This implementation uses the Crunchy PostgreSQL Operator as
+a means to provision services, in this case the service is a PostgreSQL
+database cluster.
+
+*pgo-osb* allows users to also bind to a *service instance* which when
+invoked will return PostgreSQL credentials to a user they can use
+to connect to the PostgreSQL database instance.
+
+Also, users can *deprovision* a PostgreSQL database cluster using the
+OSB API.
+
+
+The *pgo-osb* broker was developed using the *OSB Starter Pack* and 
+associated libraries.
+
+
+See 
+
+[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) 
+[`osb-broker-lib`](https://github.com/pmorie/osb-broker-lib). 
+[`go-open-service-broker-client`](https://github.com/pmorie/go-open-service-broker-client)
+[service-catalog](https://github.com/kubernetes-incubator/service-catalog)
+
+== Build
+
+To build the *pgo-osb* broker...
+
+== Deploy
+
+To deploy the *pgo-osb* broker...
+
+== Test
+
+To test the *pgo-osb* broker...
+

@@ -1,0 +1,62 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: pgo-osb
+  labels:
+    app: pgo-osb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgo-osb
+  template:
+    metadata:
+      labels:
+        app: pgo-osb
+    spec:
+      serviceAccount: pgo-osb
+      containers:
+      - name: service-pgo-osb
+        image: crunchydata/pgo-osb:centos7-0.0.1
+        imagePullPolicy: IfNotPresent
+        command:
+        - /usr/local/bin/pgo-osb
+        args:
+        - --port
+        - "8443"
+        - -v
+        - "4"
+        - --insecure
+        - "true"
+        - --logtostderr
+        - --tls-cert-file
+        - ""
+        - --tls-private-key-file
+        - ""
+        - --authenticate-k8s-token
+        ports:
+        - containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            scheme: HTTP
+            port: 8443
+          failureThreshold: 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        volumeMounts:
+        - mountPath: /var/run/pgo-osb
+          name: pgo-osb-ssl
+          readOnly: true
+      volumes:
+      - name: pgo-osb-ssl
+        secret:
+          defaultMode: 420
+          secretName: jeff-broker-tls-secret
+          items:
+          - key: tls.crt
+            path: server.crt
+          - key: tls.key
+            path: server.key

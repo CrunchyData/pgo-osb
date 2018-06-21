@@ -1,0 +1,8 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: access-pgo-osb
+rules:
+- nonResourceURLs: ["/v2", "/v2/*"]
+  verbs: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+
