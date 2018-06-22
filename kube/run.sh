@@ -7,6 +7,11 @@ export IMAGE=crunchydata/pgo-osb:centos7-0.0.1
 
 # kubectl create secret tls jeff-broker-tls-secret --cert=/tmp/server.crt --key=/tmp/server.key -o yaml
 
+kubectl create secret generic pgo-osb-apiserver-secret \
+	--from-file=ca=$DIR/server.crt \
+	--from-file=clientcert=$DIR/server.crt \
+	--from-file=clientkey=$DIR/server.key 
+
 expenv -f $DIR/service-account.yaml | $CO_CMD create -f -
 expenv -f $DIR/secret.yaml | $CO_CMD create -f -
 #expenv -f $DIR/service-account-2.yaml | $CO_CMD  create -f -

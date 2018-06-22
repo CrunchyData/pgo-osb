@@ -2,6 +2,6 @@ FROM centos:7
 
 LABEL Release="0.0.1" Vendor="Crunchy Data Solutions"
 
-ADD bin/pgo-osb /usr/local/bin/
+ADD ./pgo-osb /usr/local/bin/
 
 CMD /usr/local/bin/pgo-osb --help

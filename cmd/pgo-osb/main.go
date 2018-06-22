@@ -10,16 +10,19 @@ import (
 	"strconv"
 	"syscall"
 
+	log "github.com/Sirupsen/logrus"
 	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/shawn-hurley/osb-broker-k8s-lib/middleware"
 	clientset "k8s.io/client-go/kubernetes"
 	clientrest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/crunchydata/pgo-osb/pkg/broker"
 	"github.com/pmorie/osb-broker-lib/pkg/metrics"
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
-	"github.com/crunchydata/pgo-osb/pkg/broker"
+
+	"github.com/crunchydata/pgo-osb/apiservermsgs"
 )
 
 var options struct {
@@ -27,6 +30,8 @@ var options struct {
 
 	Port                 int
 	Insecure             bool
+	CO_APISERVER_URL     string
+	CO_APISERVER_VERSION string
 	TLSCert              string
 	TLSKey               string
 	TLSCertFile          string
@@ -49,6 +54,17 @@ func init() {
 }
 
 func main() {
+	debugFlag := os.Getenv("CRUNCHY_DEBUG")
+	if debugFlag == "true" {
+		log.SetLevel(log.DebugLevel)
+		log.Debug("debug flag set to true")
+	} else {
+		log.Info("debug flag set to false")
+	}
+
+	something := apiservermsgs.CreateClusterRequest{}
+	something.Name = "foo"
+
 	if err := run(); err != nil && err != context.Canceled && err != context.DeadlineExceeded {
 		fmt.Println(err)
 	}

@@ -16,7 +16,10 @@ spec:
     spec:
       serviceAccount: pgo-osb
       containers:
-      - name: service-pgo-osb
+      - env:
+        - name: CRUNCHY_DEBUG
+          value: "true"
+        name: service-pgo-osb
         image: crunchydata/pgo-osb:centos7-0.0.1
         imagePullPolicy: IfNotPresent
         command:
@@ -26,6 +29,10 @@ spec:
         - "8443"
         - -v
         - "4"
+        - --CO_APISERVER_URL
+        - "https://postgres-operator:8443"
+        - --CO_APISERVER_VERSION
+        - "3.1"
         - --insecure
         - "true"
         - --logtostderr
@@ -50,7 +57,21 @@ spec:
         - mountPath: /var/run/pgo-osb
           name: pgo-osb-ssl
           readOnly: true
+        - mountPath: /opt/apiserver-keys
+          name: apiserver-keys
+          readOnly: true
       volumes:
+      - name: apiserver-keys
+        secret:
+          defaultMode: 420
+          secretName: pgo-osb-apiserver-secret
+          items:
+          - key: ca
+            path: ca.crt
+          - key: clientkey
+            path: client.key
+          - key: clientcert
+            path: client.crt
       - name: pgo-osb-ssl
         secret:
           defaultMode: 420

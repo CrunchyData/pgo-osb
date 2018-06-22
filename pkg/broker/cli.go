@@ -8,8 +8,10 @@ import (
 // line. Users should add their own options here and add flags for them in
 // AddFlags.
 type Options struct {
-	CatalogPath string
-	Async       bool
+	CatalogPath          string
+	CO_APISERVER_URL     string
+	CO_APISERVER_VERSION string
+	Async                bool
 }
 
 // AddFlags is a hook called to initialize the CLI flags for broker options.
@@ -17,5 +19,8 @@ type Options struct {
 // parse is called.
 func AddFlags(o *Options) {
 	flag.StringVar(&o.CatalogPath, "catalogPath", "", "The path to the catalog")
+	flag.StringVar(&o.CO_APISERVER_URL, "CO_APISERVER_URL", "", "The url to the pgo apiserver")
+	flag.StringVar(&o.CO_APISERVER_VERSION, "CO_APISERVER_VERSION", "", "The version of the pgo apiserver")
 	flag.BoolVar(&o.Async, "async", false, "Indicates whether the broker is handling the requests asynchronously.")
+
 }
