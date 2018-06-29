@@ -32,9 +32,52 @@ See
 
 To build the *pgo-osb* broker...
 
+place these environment variables into your .bashrc:
+....
+export GOPATH=/home/jeffmc/odev
+export GOBIN=$GOPATH/bin
+export PATH=$PATH:$GOBIN
+export COROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
+export CO_BASEOS=centos7
+export CO_VERSION=3.1
+export CO_IMAGE_TAG=$CO_BASEOS-$CO_VERSION
+export CO_IMAGE_PREFIX=crunchydata
+export CO_NAMESPACE=demo
+export CO_CMD=kubectl
+....
+
+Install the dep dependency tool:
+....
+curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+....
+
+Get the deps:
+
+== Deploy Service Catalog
+
+To install the Service Catalog into Kube, here I'm using
+the sc tool.
+
+Install some sc tool deps, this example assumes you have *fast* storage class
+defined on your Kube cluster:
+....
+go get -u github.com/cloudflare/cfssl/cmd/cfssl
+go get -u github.com/cloudflare/cfssl/cmd/cfssljson
+go get github.com/GoogleCloudPlatform/k8s-service-catalog/installer/cmd/sc
+sc check
+sc install --etcd-backup-storageclass "fast"
+....
+
+Now you should have a Service Catalog installed on your Kube
+system.
+
 == Deploy
 
 To deploy the *pgo-osb* broker...
+
+....
+make image
+....
 
 == Test
 

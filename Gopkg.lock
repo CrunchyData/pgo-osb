@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/Sirupsen/logrus"
+  packages = ["."]
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
+
+[[projects]]
   branch = "master"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
@@ -377,6 +383,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "491d072e79bb43cccc1acd2bb33a9110bafbe9023ee963ab797fb6b4db2d91f1"
+  inputs-digest = "296e4b5cb357f4ee07380247c44667d11ed40bb4a781e19af8fc97af9e470349"
   solver-name = "gps-cdcl"
   solver-version = 1
