@@ -29,6 +29,12 @@ spec:
         - "8443"
         - -v
         - "4"
+        - --CO_USERNAME
+        - "username"
+        - --CO_PASSWORD
+        - "password"
+        - --PGO_OSB_GUID
+        - "thispgoosbbrokerguid"
         - --CO_APISERVER_URL
         - "https://postgres-operator:8443"
         - --CO_APISERVER_VERSION

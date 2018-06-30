@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	msgs "github.com/crunchydata/pgo-osb/apiservermsgs"
 	"io/ioutil"
@@ -28,12 +29,17 @@ import (
 	"strconv"
 )
 
-// DeleteCluster ...
-func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clusterName, clientVersion string, deleteData, deleteBackups bool) error {
-	log.Debugf("deleteCluster called %s\n", clusterName)
-	selector := "name=" + clusterName
+const INSTANCE_LABEL_KEY = "pgo-osb-instance"
 
-	log.Debug("deleting cluster " + clusterName + " with delete-data " + strconv.FormatBool(deleteData))
+// DeleteCluster ...
+func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion, instanceID string) error {
+	log.Debugf("deleteCluster called %s\n", instanceID)
+	selector := INSTANCE_LABEL_KEY + "=" + instanceID
+
+	clusterName := "all"
+	deleteData := false
+	deleteBackups := false
+	log.Debug("deleting cluster " + selector + " with delete-data " + strconv.FormatBool(deleteData))
 
 	url := APIServerURL + "/clustersdelete/" + clusterName + "?selector=" + selector + "&delete-data=" + strconv.FormatBool(deleteData) + "&delete-backups=" + strconv.FormatBool(deleteBackups) + "&version=" + clientVersion
 
@@ -85,7 +91,7 @@ func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clusterNa
 }
 
 // CreateCluster ....
-func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterName, clientVersion string) error {
+func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterName, clientVersion, instanceID string) error {
 	var err error
 
 	r := new(msgs.CreateClusterRequest)
@@ -94,7 +100,8 @@ func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterNa
 	//r.Password = Password
 	//r.SecretFrom = SecretFrom
 	//r.BackupPVC = BackupPVC
-	//r.UserLabels = UserLabels
+	r.UserLabels = INSTANCE_LABEL_KEY + "=" + instanceID
+	fmt.Println("user label applied is [" + r.UserLabels + "]")
 	//r.BackupPath = BackupPath
 	//r.Policies = PoliciesFlag
 	//r.CCPImageTag = CCPImageTag

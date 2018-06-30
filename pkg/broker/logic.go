@@ -1,8 +1,9 @@
 package broker
 
 import (
+	"fmt"
 	log "github.com/Sirupsen/logrus"
-	"net/http"
+	//"net/http"
 	"sync"
 
 	"github.com/crunchydata/pgo-osb/pgocmd"
@@ -18,17 +19,18 @@ import (
 func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 	log.Info("NewBusinessLogic called")
 
-	log.Info("CO_APISERVER_URL flag [" + o.CO_APISERVER_URL + "]")
-	log.Info("CO_APISERVER_VERSION flag [" + o.CO_APISERVER_VERSION + "]")
+	log.Infof("Options %v\n", o)
 
 	// For example, if your BusinessLogic requires a parameter from the command
 	// line, you would unpack it from the Options and set it on the
 	// BusinessLogic here.
 	return &BusinessLogic{
-		async:                o.Async,
-		instances:            make(map[string]*exampleInstance, 10),
+		async: o.Async,
+		//instances:            make(map[string]*exampleInstance, 10),
 		CO_APISERVER_URL:     o.CO_APISERVER_URL,
 		CO_APISERVER_VERSION: o.CO_APISERVER_VERSION,
+		CO_USERNAME:          o.CO_USERNAME,
+		CO_PASSWORD:          o.CO_PASSWORD,
 	}, nil
 }
 
@@ -40,9 +42,10 @@ type BusinessLogic struct {
 	// Synchronize go routines.
 	sync.RWMutex
 	// Add fields here! These fields are provided purely as an example
-	instances            map[string]*exampleInstance
 	CO_APISERVER_URL     string
 	CO_APISERVER_VERSION string
+	CO_USERNAME          string
+	CO_PASSWORD          string
 }
 
 var _ broker.Interface = &BusinessLogic{}
@@ -112,10 +115,10 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 
 	//jeff here is where you create the database instance using the passed params
 
-	log.Infof("Provision called with params %v\n", request.Parameters)
-	log.Infof("Provision called with InstanceID %d\n", request.InstanceID)
-	log.Infof("Provision called with ServiceID %d\n", request.ServiceID)
-	log.Infof("Provision called with PlanID %d\n", request.PlanID)
+	fmt.Printf("Provision called with params %v\n", request.Parameters)
+	fmt.Printf("Provision called with InstanceID %d\n", request.InstanceID)
+	fmt.Printf("Provision called with ServiceID %d\n", request.ServiceID)
+	fmt.Printf("Provision called with PlanID %d\n", request.PlanID)
 	// example implementation:
 	b.Lock()
 	defer b.Unlock()
@@ -151,15 +154,14 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		response.Async = b.async
 	}
 
-	log.Info("provision CO_USERNAME=" + request.Parameters["CO_USERNAME"].(string))
-	log.Info("provision CO_PASSWORD=" + request.Parameters["CO_PASSWORD"].(string))
-	log.Info("provision CO_CLUSTERNAME=" + request.Parameters["CO_CLUSTERNAME"].(string))
+	fmt.Println("provision CO_USERNAME=" + request.Parameters["CO_USERNAME"].(string))
+	fmt.Println("provision CO_PASSWORD=" + request.Parameters["CO_PASSWORD"].(string))
+	fmt.Println("provision CO_CLUSTERNAME=" + request.Parameters["CO_CLUSTERNAME"].(string))
 
-	log.Info("provision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
-	log.Info("provision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
+	fmt.Println("provision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
+	fmt.Println("provision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
 
-	pgocmd.CreateCluster(b.CO_APISERVER_URL, request.Parameters["CO_USERNAME"].(string), request.Parameters["CO_PASSWORD"].(string), request.Parameters["CO_CLUSTERNAME"].(string), b.CO_APISERVER_VERSION)
-
+	pgocmd.CreateCluster(b.CO_APISERVER_URL, request.Parameters["CO_USERNAME"].(string), request.Parameters["CO_PASSWORD"].(string), request.Parameters["CO_CLUSTERNAME"].(string), b.CO_APISERVER_VERSION, request.InstanceID)
 	return &response, nil
 }
 
@@ -168,29 +170,28 @@ func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.R
 	// jeff here is where you delete any bindings to this database
 	// and the delete the database itself
 
-	log.Infof("Deprovision called request=%v", request)
+	fmt.Printf("Deprovision called request=%v", request)
+	fmt.Printf("Deprovision called broker request context=%v", c)
 	// example implementation:
 	b.Lock()
 	defer b.Unlock()
 
 	response := broker.DeprovisionResponse{}
 
-	/**
-	log.Infof("Deprovision instanceID=%d\n", request.InstanceID)
-	log.Infof("Deprovision request=%v\n", request)
-	instance2Delete := b.instances[request.InstanceID]
-	log.Infof("Deprovision instance2Delete=%v\n", instance2Delete)
+	fmt.Printf("Deprovision instanceID=%d\n", request.InstanceID)
+	fmt.Printf("Deprovision request=%v\n", request)
+	//instance2Delete := b.instances[request.InstanceID]
+	//fmt.Infof("Deprovision instance2Delete=%v\n", instance2Delete)
 
-	log.Info("Deprovision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
-	log.Info("Deprovision CO_USERNAME=" + instance2Delete.Params["CO_USERNAME"].(string))
-	log.Info("Deprovision CO_PASSWORD=" + instance2Delete.Params["CO_PASSWORD"].(string))
-	log.Info("Deprovision CO_CLUSTERNAME=" + instance2Delete.Params["CO_CLUSTERNAME"].(string))
-	log.Info("Deprovision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
+	fmt.Println("Deprovision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
+	//fmt.Info("Deprovision CO_USERNAME=" + instance2Delete.Params["CO_USERNAME"].(string))
+	//fmt.Info("Deprovision CO_PASSWORD=" + instance2Delete.Params["CO_PASSWORD"].(string))
+	//fmt.Info("Deprovision CO_CLUSTERNAME=" + instance2Delete.Params["CO_CLUSTERNAME"].(string))
+	fmt.Println("Deprovision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
 
-	//	pgocmd.DeleteCluster(b.CO_APISERVER_URL, instance2Delete.Params["CO_USERNAME"].(string), instance2Delete.Params["CO_PASSWORD"].(string), instance2Delete.Params["CO_CLUSTERNAME"].(string), b.CO_APISERVER_VERSION, true, true)
+	pgocmd.DeleteCluster(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
 
-	delete(b.instances, request.InstanceID)
-	*/
+	//delete(b.instances, request.InstanceID)
 
 	if request.AcceptsIncomplete {
 		response.Async = b.async
@@ -215,18 +216,18 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	b.Lock()
 	defer b.Unlock()
 
-	instance, ok := b.instances[request.InstanceID]
-	if !ok {
-		return nil, osb.HTTPStatusCodeError{
-			StatusCode: http.StatusNotFound,
-		}
-	}
+	//instance, ok := b.instances[request.InstanceID]
+	//if !ok {
+	//return nil, osb.HTTPStatusCodeError{
+	//StatusCode: http.StatusNotFound,
+	//}
+	//}
 
-	log.Infof("Bind called with params %v\n", instance.Params)
+	log.Infof("Bind called with request %v\n", request)
 
 	response := broker.BindResponse{
 		BindResponse: osb.BindResponse{
-			Credentials: instance.Params,
+		//Credentials: instance.Params,
 		},
 	}
 	if request.AcceptsIncomplete {
