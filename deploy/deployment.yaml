@@ -34,7 +34,7 @@ spec:
         - --CO_PASSWORD
         - "password"
         - --PGO_OSB_GUID
-        - "thispgoosbbrokerguid"
+        - "4be12541-2945-4101-8a33-79ac0ad58750"
         - --CO_APISERVER_URL
         - "https://postgres-operator:8443"
         - --CO_APISERVER_VERSION

@@ -4,25 +4,22 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
-	"os/signal"
-	"path"
-	"strconv"
-	"syscall"
-
 	log "github.com/Sirupsen/logrus"
+	"github.com/crunchydata/pgo-osb/pkg/broker"
+	"github.com/google/uuid"
+	"github.com/pmorie/osb-broker-lib/pkg/metrics"
+	"github.com/pmorie/osb-broker-lib/pkg/rest"
+	"github.com/pmorie/osb-broker-lib/pkg/server"
 	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/shawn-hurley/osb-broker-k8s-lib/middleware"
 	clientset "k8s.io/client-go/kubernetes"
 	clientrest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-
-	"github.com/crunchydata/pgo-osb/pkg/broker"
-	"github.com/pmorie/osb-broker-lib/pkg/metrics"
-	"github.com/pmorie/osb-broker-lib/pkg/rest"
-	"github.com/pmorie/osb-broker-lib/pkg/server"
-
-	"github.com/crunchydata/pgo-osb/apiservermsgs"
+	"os"
+	"os/signal"
+	"path"
+	"strconv"
+	"syscall"
 )
 
 var options struct {
@@ -62,8 +59,10 @@ func main() {
 		log.Info("debug flag set to false")
 	}
 
-	something := apiservermsgs.CreateClusterRequest{}
-	something.Name = "foo"
+	if options.PGO_OSB_GUID == "" {
+		options.PGO_OSB_GUID = uuid.New().String()
+		log.Info("generating GUID for this broker since none was supplied in the PGO_OSB_GUID env var: GUID is " + options.PGO_OSB_GUID)
+	}
 
 	if err := run(); err != nil && err != context.Canceled && err != context.DeadlineExceeded {
 		fmt.Println(err)

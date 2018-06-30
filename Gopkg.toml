@@ -44,3 +44,7 @@
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
   version = "v1.0.5"
+
+[[constraint]]
+  name = "github.com/google/uuid"
+  version = "v.1"

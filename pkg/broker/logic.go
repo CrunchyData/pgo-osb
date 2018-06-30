@@ -3,14 +3,11 @@ package broker
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"github.com/crunchydata/pgo-osb/pgocmd"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"github.com/pmorie/osb-broker-lib/pkg/broker"
 	"net/http"
 	"sync"
-
-	"github.com/crunchydata/pgo-osb/pgocmd"
-	"github.com/pmorie/osb-broker-lib/pkg/broker"
-
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	"reflect"
 )
 
 // NewBusinessLogic is a hook that is called with the Options the program is run
@@ -25,8 +22,8 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 	// line, you would unpack it from the Options and set it on the
 	// BusinessLogic here.
 	return &BusinessLogic{
-		async: o.Async,
-		//instances:            make(map[string]*exampleInstance, 10),
+		async:                o.Async,
+		PGO_OSB_GUID:         o.PGO_OSB_GUID,
 		CO_APISERVER_URL:     o.CO_APISERVER_URL,
 		CO_APISERVER_VERSION: o.CO_APISERVER_VERSION,
 		CO_USERNAME:          o.CO_USERNAME,
@@ -42,6 +39,7 @@ type BusinessLogic struct {
 	// Synchronize go routines.
 	sync.RWMutex
 	// Add fields here! These fields are provided purely as an example
+	PGO_OSB_GUID         string
 	CO_APISERVER_URL     string
 	CO_APISERVER_VERSION string
 	CO_USERNAME          string
@@ -62,8 +60,9 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 	osbResponse := &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name:          "pgo-osb-service",
-				ID:            "4f6e6cf6-ffdd-425f-a2c7-3c9258ad246c",
+				Name: "pgo-osb-service",
+				//ID:            "4f6e6cf6-ffdd-425f-a2c7-3c9258ad246c",
+				ID:            b.PGO_OSB_GUID,
 				Description:   "The pgo osb!",
 				Bindable:      true,
 				PlanUpdatable: truePtr(),
@@ -262,18 +261,4 @@ func (b *BusinessLogic) Update(request *osb.UpdateInstanceRequest, c *broker.Req
 
 func (b *BusinessLogic) ValidateBrokerAPIVersion(version string) error {
 	return nil
-}
-
-// example types
-
-// exampleInstance is intended as an example of a type that holds information about a service instance
-type exampleInstance struct {
-	ID        string
-	ServiceID string
-	PlanID    string
-	Params    map[string]interface{}
-}
-
-func (i *exampleInstance) Match(other *exampleInstance) bool {
-	return reflect.DeepEqual(i, other)
 }
