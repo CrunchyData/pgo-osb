@@ -28,13 +28,26 @@ See
 [`go-open-service-broker-client`](https://github.com/pmorie/go-open-service-broker-client)
 [service-catalog](https://github.com/kubernetes-incubator/service-catalog)
 
+== Prerequisites
+
+Running the *pgo-osb* service broker assumes you have deployed
+the PostgreSQL Operator to your namespace that you will be
+deploying the service broker into.  See https://github.com/CrunchyData/postgres-operator for documentation on deploying the PostgreSQL Operator.
+
+This example assumes you have created a Kube namespace called *demo*.  Adjust
+CO_NAMESPACE to suit your specific namespace value.  The example
+also assumes you are using the PostgreSQL Operator default RBAC
+account called *username* with a password of *password*.  If this is not
+the case then you will need to adjust the example service instance *service-instance.yaml*.
+
 == Build
 
 To build the *pgo-osb* broker...
 
-place these environment variables into your .bashrc:
+place these environment variables into your .bashrc as they
+are used in the various scripts and deployment templates:
 ....
-export GOPATH=/home/jeffmc/odev
+export GOPATH=$HOME/odev
 export GOBIN=$GOPATH/bin
 export PATH=$PATH:$GOBIN
 export COROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
@@ -77,9 +90,151 @@ To deploy the *pgo-osb* broker...
 
 ....
 make image
+make deploy
 ....
+
+You can verify your deployment has been successful with:
+....
+kubectl get pod --selector=app=pgo-osb
+NAME                       READY     STATUS    RESTARTS   AGE
+pgo-osb-69c76578b9-v7s9k   1/1       Running   0          16m
+....
+
 
 == Test
 
 To test the *pgo-osb* broker...
 
+Create an instance:
+....
+expenv -f $COROOT/manifests/service-instance.json | kubectl create -f -
+kubectl get serviceinstance
+....
+
+You should see a pod with that service instance name:
+
+....
+kubectl get pod --selector=name=testinstance
+....
+
+Create a binding:
+....
+expenv -f $COROOT/manifests/service-binding.json | kubectl create -f -
+kubectl get servicebinding
+....
+
+You can also use the *svcat* Service Catalog CLI to inspect
+the service catalog.
+
+=== View the Service Brokers
+
+....
+$ svcat get brokers
+NAME                        URL                      STATUS  
++---------+-------------------------------------------+--------+
+pgo-osb   http://pgo-osb.demo.svc.cluster.local:443   Ready 
+....
+
+=== Get the Service Class
+
+....
+$ svcat get classes
+NAME         DESCRIPTION   
++-----------------+--------------+
+pgo-osb-service   The pgo osb!  
+....
+
+=== View the Service Class
+
+....
+$ svcat describe class pgo-osb-service
+Name:          pgo-osb-service                       
+Description:   The pgo osb!                          
+UUID:          4be12541-2945-4101-8a33-79ac0ad58750  
+Status:        Active                                
+Tags:                                                
+Broker:        pgo-osb                               
+		      Plans:
+		      NAME              DESCRIPTION            
+		+---------+--------------------------------+
+		default   The default plan for the pgo    
+		osb service 
+
+....
+
+=== Provision an Instance
+
+....
+$ svcat provision -n demo myinstance --class pgo-osb-service --param CO_USERNAME=username --param CO_PASSWORD=password --param CO_CLUSTERNAME=myinstance --plan=default
+  Name:        myinstance       
+  Namespace:   demo             
+  Status:                       
+  Class:       pgo-osb-service  
+  Plan:        default          
+
+Parameters:
+  CO_CLUSTERNAME: myinstance
+  CO_PASSWORD: password
+  CO_USERNAME: username
+....
+
+
+=== View all instances on the cluster
+
+....
+$ svcat describe plan pgo-osb-service/default
+  Name:          default                                   
+  Description:   The default plan for the pgo osb service  
+  UUID:          86064792-7ea2-467b-af93-ac9694d96d5c      
+  Status:        Active                                    
+  Free:          true                                      
+  Class:         pgo-osb-service                           
+
+Instances:
+NAME      NAMESPACE   STATUS  
++------------+-----------+--------+
+  myinstance   demo        Ready   
+  testy4       demo        Ready   
+....
+
+=== View Instances in a Namespace
+....
+$ svcat get instances -n demo
+NAME      NAMESPACE        CLASS         PLAN     STATUS  
++------------+-----------+-----------------+---------+--------+
+  myinstance   demo        pgo-osb-service   default   Ready   
+  testy4       demo        pgo-osb-service   default   Ready 
+....
+
+=== Bind an Instance
+
+....
+$ svcat bind -n demo myinstance --name myinstance-binding
+Name:        myinstance-binding  
+Namespace:   demo                
+Status:                          
+Secret:      myinstance-binding  
+Instance:    myinstance          
+
+Parameters:
+No parameters defined
+
+$ kubectl describe secret myinstance-binding
+Name:         myinstance-binding
+Namespace:    demo
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+postgres:     10 bytes
+primaryuser:  10 bytes
+testuser:     10 bytes
+....
+
+Notice in this example that we have 3 Postgres users and their passwords
+stored in this Secret as a result of the binding being created.
+
+You can obtain the *svcat* utility from https://svc-cat.io/docs/cli/.

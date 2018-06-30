@@ -20,7 +20,7 @@ spec:
         - name: CRUNCHY_DEBUG
           value: "true"
         name: service-pgo-osb
-        image: crunchydata/pgo-osb:centos7-3.1
+        image: $CO_IMAGE_PREFIX/pgo-osb:$CO_IMAGE_TAG
         imagePullPolicy: IfNotPresent
         command:
         - /usr/local/bin/pgo-osb

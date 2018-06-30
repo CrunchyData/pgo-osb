@@ -29,8 +29,8 @@ $CO_CMD $NS create secret generic pgo-osb-apiserver-secret \
         --from-file=clientcert=$DIR/server.crt \
         --from-file=clientkey=$DIR/server.key
 
-expenv -f $DIR/service-account.yaml | $CO_CMD create -f -
-expenv -f $DIR/secret.yaml | $CO_CMD create -f -
+$CO_CMD create -f  $DIR/service-account.yaml
+$CO_CMD create -f  $DIR/secret.yaml
 
 $CO_CMD create -f $DIR/cluster-role-1.yaml
 $CO_CMD create -f $DIR/cluster-role.yaml
