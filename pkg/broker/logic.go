@@ -3,7 +3,7 @@ package broker
 import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
-	//"net/http"
+	"net/http"
 	"sync"
 
 	"github.com/crunchydata/pgo-osb/pgocmd"
@@ -210,11 +210,12 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	// Your bind business logic goes here
 	// jeff here is where you would return database credentials to an instance
 
-	log.Infoln("Bind called")
+	fmt.Printf("Bind called req=%v\n", request)
+	fmt.Printf("Bind called broker ctx=%v\n", c)
 
 	// example implementation:
-	b.Lock()
-	defer b.Unlock()
+	//b.Lock()
+	//defer b.Unlock()
 
 	//instance, ok := b.instances[request.InstanceID]
 	//if !ok {
@@ -223,11 +224,16 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	//}
 	//}
 
-	log.Infof("Bind called with request %v\n", request)
+	credentials, err := pgocmd.GetClusterCredentials(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
+	if err != nil {
+		return nil, osb.HTTPStatusCodeError{
+			StatusCode: http.StatusNotFound,
+		}
+	}
 
 	response := broker.BindResponse{
 		BindResponse: osb.BindResponse{
-		//Credentials: instance.Params,
+			Credentials: credentials,
 		},
 	}
 	if request.AcceptsIncomplete {
@@ -239,13 +245,13 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 
 func (b *BusinessLogic) Unbind(request *osb.UnbindRequest, c *broker.RequestContext) (*broker.UnbindResponse, error) {
 	// Your unbind business logic goes here
-	log.Infoln("Unbind called")
+	fmt.Println("Unbind called")
 	return &broker.UnbindResponse{}, nil
 }
 
 func (b *BusinessLogic) Update(request *osb.UpdateInstanceRequest, c *broker.RequestContext) (*broker.UpdateInstanceResponse, error) {
 	// Your logic for updating a service goes here.
-	log.Infoln("Update called")
+	fmt.Println("Update called")
 	response := broker.UpdateInstanceResponse{}
 	if request.AcceptsIncomplete {
 		response.Async = b.async

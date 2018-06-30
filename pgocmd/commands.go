@@ -31,6 +31,83 @@ import (
 
 const INSTANCE_LABEL_KEY = "pgo-osb-instance"
 
+// GetClusterCredentials ...
+func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion, instanceID string) (map[string]interface{}, error) {
+
+	credentials := make(map[string]interface{})
+	var response *msgs.ShowClusterResponse
+	var detail *msgs.ShowClusterDetail
+	log.Debugf("ShowCluster called %s\n", instanceID)
+	selector := INSTANCE_LABEL_KEY + "=" + instanceID
+
+	clusterName := "all"
+	log.Debug("show cluster " + selector)
+
+	url := APIServerURL + "/clusters/" + clusterName + "?selector=" + selector + "&version=" + clientVersion
+
+	log.Debug("show cluster called [" + url + "]")
+
+	action := "GET"
+	req, err := http.NewRequest(action, url, nil)
+	if err != nil {
+		log.Error("NewRequest: ", err)
+		return credentials, err
+	}
+
+	req.SetBasicAuth(basicAuthUsername, basicAuthPassword)
+
+	httpclient, err := GetCredentials(basicAuthUsername, basicAuthPassword)
+	if err != nil {
+		return credentials, err
+	}
+
+	resp, err := httpclient.Do(req)
+	if err != nil {
+		log.Error("Do: ", err)
+		return credentials, err
+	}
+	log.Debugf("%v\n", resp)
+	if !StatusCheck(resp) {
+		return credentials, errors.New("could not authenticate")
+	}
+
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		log.Printf("%v\n", resp.Body)
+		log.Error(err)
+		log.Println(err)
+		return credentials, err
+	}
+
+	if response.Status.Code == msgs.Ok {
+		for _, result := range response.Results {
+			log.Infoln(result)
+		}
+	} else {
+		log.Error(response.Status.Msg)
+		return credentials, err
+	}
+
+	if len(response.Results) != 1 {
+		//error, should always return a single cluster detail
+		//because we are using a instanceID as the search key
+		return credentials, errors.New("cluster for instanceID " + instanceID + " not found in bind ")
+	}
+
+	detail = &response.Results[0]
+
+	fmt.Println("cluster secrets are:")
+	for _, s := range detail.Secrets {
+		fmt.Println("secret : " + s.Name)
+		fmt.Println("username: " + s.Username)
+		fmt.Println("password: " + s.Password)
+		credentials[s.Username] = s.Password
+	}
+
+	return credentials, err
+
+}
+
 // DeleteCluster ...
 func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion, instanceID string) error {
 	log.Debugf("deleteCluster called %s\n", instanceID)

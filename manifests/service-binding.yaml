@@ -1,8 +1,8 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
-  name: pgo-osb-service-binding2
+  name: testy4-binding
   namespace: demo
 spec:
   instanceRef:
-    name: pgo-osb-service2
+    name: testy4
