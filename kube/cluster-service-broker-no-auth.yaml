@@ -1,7 +1,0 @@
-  apiVersion: servicecatalog.k8s.io/v1beta1
-  kind: ClusterServiceBroker
-  metadata:
-    name: pgo-osb
-  spec:
-    url: http://pgo-osb.$CO_NAMESPACE.svc.cluster.local:443
-

@@ -21,12 +21,12 @@ The *pgo-osb* broker was developed using the *OSB Starter Pack* and
 associated libraries.
 
 
-See 
+See the following:
 
-[Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) 
-[`osb-broker-lib`](https://github.com/pmorie/osb-broker-lib). 
-[`go-open-service-broker-client`](https://github.com/pmorie/go-open-service-broker-client)
-[service-catalog](https://github.com/kubernetes-incubator/service-catalog)
+ * [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) 
+ * [`osb-broker-lib`](https://github.com/pmorie/osb-broker-lib). 
+ * [`go-open-service-broker-client`](https://github.com/pmorie/go-open-service-broker-client)
+ * [service-catalog](https://github.com/kubernetes-incubator/service-catalog)
 
 == Prerequisites
 

@@ -1,11 +1,25 @@
 package broker
 
+/*
+Copyright 2018 Crunchy Data Solutions, Inc.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 import (
-	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/crunchydata/pgo-osb/pgocmd"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"github.com/pmorie/osb-broker-lib/pkg/broker"
+	"log"
 	"net/http"
 	"sync"
 )
@@ -14,9 +28,9 @@ import (
 // with. NewBusinessLogic is the place where you will initialize your
 // BusinessLogic the parameters passed in.
 func NewBusinessLogic(o Options) (*BusinessLogic, error) {
-	log.Info("NewBusinessLogic called")
+	log.Print("NewBusinessLogic called")
 
-	log.Infof("Options %v\n", o)
+	log.Printf("Options %v\n", o)
 
 	// For example, if your BusinessLogic requires a parameter from the command
 	// line, you would unpack it from the Options and set it on the
@@ -54,8 +68,8 @@ func truePtr() *bool {
 }
 
 func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogResponse, error) {
-	// Your catalog business logic goes here
-	log.Info("GetCatalog called")
+
+	log.Print("GetCatalog called")
 	response := &broker.CatalogResponse{}
 	osbResponse := &osb.CatalogResponse{
 		Services: []osb.Service{
@@ -102,7 +116,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 		},
 	}
 
-	log.Infof("catalog response: %#+v", osbResponse)
+	log.Printf("catalog response: %#+v", osbResponse)
 
 	response.CatalogResponse = *osbResponse
 
@@ -110,15 +124,12 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 }
 
 func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.RequestContext) (*broker.ProvisionResponse, error) {
-	// Your provision business logic goes here
 
-	//jeff here is where you create the database instance using the passed params
+	log.Printf("Provision called with params %v\n", request.Parameters)
+	log.Printf("Provision called with InstanceID %d\n", request.InstanceID)
+	log.Printf("Provision called with ServiceID %d\n", request.ServiceID)
+	log.Printf("Provision called with PlanID %d\n", request.PlanID)
 
-	fmt.Printf("Provision called with params %v\n", request.Parameters)
-	fmt.Printf("Provision called with InstanceID %d\n", request.InstanceID)
-	fmt.Printf("Provision called with ServiceID %d\n", request.ServiceID)
-	fmt.Printf("Provision called with PlanID %d\n", request.PlanID)
-	// example implementation:
 	b.Lock()
 	defer b.Unlock()
 
@@ -153,44 +164,33 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		response.Async = b.async
 	}
 
-	fmt.Println("provision CO_USERNAME=" + request.Parameters["CO_USERNAME"].(string))
-	fmt.Println("provision CO_PASSWORD=" + request.Parameters["CO_PASSWORD"].(string))
-	fmt.Println("provision CO_CLUSTERNAME=" + request.Parameters["CO_CLUSTERNAME"].(string))
+	log.Print("provision CO_USERNAME=" + request.Parameters["CO_USERNAME"].(string))
+	log.Print("provision CO_PASSWORD=" + request.Parameters["CO_PASSWORD"].(string))
+	log.Print("provision CO_CLUSTERNAME=" + request.Parameters["CO_CLUSTERNAME"].(string))
 
-	fmt.Println("provision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
-	fmt.Println("provision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
+	log.Print("provision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
+	log.Print("provision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
 
 	pgocmd.CreateCluster(b.CO_APISERVER_URL, request.Parameters["CO_USERNAME"].(string), request.Parameters["CO_PASSWORD"].(string), request.Parameters["CO_CLUSTERNAME"].(string), b.CO_APISERVER_VERSION, request.InstanceID)
 	return &response, nil
 }
 
 func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.RequestContext) (*broker.DeprovisionResponse, error) {
-	// Your deprovision business logic goes here
-	// jeff here is where you delete any bindings to this database
-	// and the delete the database itself
 
-	fmt.Printf("Deprovision called request=%v", request)
-	fmt.Printf("Deprovision called broker request context=%v", c)
-	// example implementation:
+	log.Printf("Deprovision called request=%v", request)
+	log.Printf("Deprovision called broker request context=%v", c)
+
 	b.Lock()
 	defer b.Unlock()
 
 	response := broker.DeprovisionResponse{}
 
-	fmt.Printf("Deprovision instanceID=%d\n", request.InstanceID)
-	fmt.Printf("Deprovision request=%v\n", request)
-	//instance2Delete := b.instances[request.InstanceID]
-	//fmt.Infof("Deprovision instance2Delete=%v\n", instance2Delete)
-
-	fmt.Println("Deprovision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
-	//fmt.Info("Deprovision CO_USERNAME=" + instance2Delete.Params["CO_USERNAME"].(string))
-	//fmt.Info("Deprovision CO_PASSWORD=" + instance2Delete.Params["CO_PASSWORD"].(string))
-	//fmt.Info("Deprovision CO_CLUSTERNAME=" + instance2Delete.Params["CO_CLUSTERNAME"].(string))
-	fmt.Println("Deprovision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
+	log.Printf("Deprovision instanceID=%d\n", request.InstanceID)
+	log.Printf("Deprovision request=%v\n", request)
+	log.Printf("Deprovision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
+	log.Printf("Deprovision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
 
 	pgocmd.DeleteCluster(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
-
-	//delete(b.instances, request.InstanceID)
 
 	if request.AcceptsIncomplete {
 		response.Async = b.async
@@ -200,19 +200,15 @@ func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.R
 }
 
 func (b *BusinessLogic) LastOperation(request *osb.LastOperationRequest, c *broker.RequestContext) (*broker.LastOperationResponse, error) {
-	// Your last-operation business logic goes here
-	log.Infoln("LastOperator called")
+	log.Println("LastOperator called")
 	return nil, nil
 }
 
 func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext) (*broker.BindResponse, error) {
-	// Your bind business logic goes here
-	// jeff here is where you would return database credentials to an instance
 
-	fmt.Printf("Bind called req=%v\n", request)
-	fmt.Printf("Bind called broker ctx=%v\n", c)
+	log.Printf("Bind called req=%v\n", request)
+	log.Printf("Bind called broker ctx=%v\n", c)
 
-	// example implementation:
 	//b.Lock()
 	//defer b.Unlock()
 
@@ -243,14 +239,14 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 }
 
 func (b *BusinessLogic) Unbind(request *osb.UnbindRequest, c *broker.RequestContext) (*broker.UnbindResponse, error) {
-	// Your unbind business logic goes here
-	fmt.Println("Unbind called")
+
+	log.Print("Unbind called")
 	return &broker.UnbindResponse{}, nil
 }
 
 func (b *BusinessLogic) Update(request *osb.UpdateInstanceRequest, c *broker.RequestContext) (*broker.UpdateInstanceResponse, error) {
-	// Your logic for updating a service goes here.
-	fmt.Println("Update called")
+
+	log.Print("Update called")
 	response := broker.UpdateInstanceResponse{}
 	if request.AcceptsIncomplete {
 		response.Async = b.async

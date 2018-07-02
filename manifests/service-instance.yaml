@@ -1,7 +1,7 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
-  name: testintance
+  name: testinstance
   namespace: $CO_NAMESPACE
 spec:
   clusterServiceClassExternalName: pgo-osb-service 
@@ -9,4 +9,4 @@ spec:
   parameters:
     CO_USERNAME: username
     CO_PASSWORD: password
-    CO_CLUSTERNAME: testintance
+    CO_CLUSTERNAME: testinstance

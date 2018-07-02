@@ -10,10 +10,15 @@ test: ## Runs the tests
 linux: ## Builds a Linux executable
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
 	go build -o pgo-osb --ldflags="-s" github.com/crunchydata/pgo-osb/cmd/pgo-osb
+main:
+	go install pgo-osb.go
 
-image: linux ## Builds a Linux based image
+image: main 
+	cp $(GOBIN)/pgo-osb .
 	docker build -t pgo-osb -f $(CO_BASEOS)/Dockerfile.pgo-osb.$(CO_BASEOS) .
 	docker tag pgo-osb $(CO_IMAGE_PREFIX)/pgo-osb:$(CO_IMAGE_TAG)
+push:
+	docker push $(CO_IMAGE_PREFIX)/pgo-osb:$(CO_IMAGE_TAG)
 
 deploy:
 	cd deploy && ./deploy.sh
@@ -24,13 +29,15 @@ clean: ## Cleans up build artifacts
 	rm -f image/pgo-osb
 
 provision: ## Provisions a service instance
-	kubectl apply -f manifests/service-instance.yaml
+	expenv -f manifests/service-instance.yaml | kubectl create -f -
+deprovision: 
+	kubectl delete serviceinstance testinstance
 
 setup: 
 	go get github.com/blang/expenv
 
 bind: ## Creates a binding
-	kubectl apply -f manifests/service-binding.yaml
+	expenv -f manifests/service-binding.yaml | kubectl create -f -
 
 help: ## Shows the help
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'

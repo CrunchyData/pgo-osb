@@ -1,4 +1,0 @@
-FROM busybox
-
-ADD bin/pgo-osb /usr/local/bin/
-CMD /usr/local/bin/pgo-osb --help

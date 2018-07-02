@@ -53,12 +53,6 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
-  name = "github.com/google/uuid"
-  packages = ["."]
-  revision = "9e951e1b0753e70359075742c99e505e94e97895"
-  version = "v0.1"
-
-[[projects]]
   name = "github.com/googleapis/gnostic"
   packages = [
     "OpenAPIv2",
@@ -174,6 +168,12 @@
     "xfs"
   ]
   revision = "282c8707aa210456a825798969cc27edda34992a"
+
+[[projects]]
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/shawn-hurley/osb-broker-k8s-lib"
@@ -389,6 +389,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e0cb996e67432f9ede7db85ef766c88c0ac3369730bd844de3ff3ed2a4cfc0ef"
+  inputs-digest = "ed118841ceca0cb48469bb96789162726a30d94a6f7afcf66b92d6794541c865"
   solver-name = "gps-cdcl"
   solver-version = 1
