@@ -30,6 +30,8 @@ See the following:
 
 == Prerequisites
 
+golang 1.9 or above is required to build this project.
+
 Running the *pgo-osb* service broker assumes you have deployed
 the PostgreSQL Operator to your namespace that you will be
 deploying the service broker into.  See https://github.com/CrunchyData/postgres-operator for documentation on deploying the PostgreSQL Operator.
