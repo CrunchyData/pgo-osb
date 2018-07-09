@@ -94,7 +94,8 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 							ServiceInstance: &osb.ServiceInstanceSchema{
 								Create: &osb.InputParametersSchema{
 									Parameters: map[string]interface{}{
-										"type": "object",
+										"type":    "object",
+										"$schema": "http://json-schema.org/draft-04/schema#",
 										"properties": map[string]interface{}{
 											"color": map[string]interface{}{
 												"type":    "string",
