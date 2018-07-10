@@ -97,14 +97,17 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 										"type":    "object",
 										"$schema": "http://json-schema.org/draft-04/schema#",
 										"properties": map[string]interface{}{
-											"color": map[string]interface{}{
+											"CO_USERNAME": map[string]interface{}{
 												"type":    "string",
 												"default": "Clear",
-												"enum": []string{
-													"Clear",
-													"Beige",
-													"Grey",
-												},
+											},
+											"CO_CLUSTERNAME": map[string]interface{}{
+												"type":    "string",
+												"default": "Clear",
+											},
+											"CO_PASSWORD": map[string]interface{}{
+												"type":    "string",
+												"default": "Clear",
 											},
 										},
 									},
