@@ -32,7 +32,7 @@ import (
 const INSTANCE_LABEL_KEY = "pgo-osb-instance"
 
 // GetClusterCredentials ...
-func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion, instanceID string) (map[string]interface{}, error) {
+func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion, instanceID string) (map[string]interface{}, []msgs.ShowClusterService, error) {
 
 	credentials := make(map[string]interface{})
 	var response *msgs.ShowClusterResponse
@@ -51,24 +51,24 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 	req, err := http.NewRequest(action, url, nil)
 	if err != nil {
 		log.Print("NewRequest: ", err)
-		return credentials, err
+		return credentials, nil, err
 	}
 
 	req.SetBasicAuth(basicAuthUsername, basicAuthPassword)
 
 	httpclient, err := GetCredentials(basicAuthUsername, basicAuthPassword)
 	if err != nil {
-		return credentials, err
+		return credentials, nil, err
 	}
 
 	resp, err := httpclient.Do(req)
 	if err != nil {
 		log.Print("Do: ", err)
-		return credentials, err
+		return credentials, nil, err
 	}
 	log.Printf("%v\n", resp)
 	if !StatusCheck(resp) {
-		return credentials, errors.New("could not authenticate")
+		return credentials, nil, errors.New("could not authenticate")
 	}
 
 	defer resp.Body.Close()
@@ -76,7 +76,7 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 		log.Printf("%v\n", resp.Body)
 		log.Print(err)
 		log.Println(err)
-		return credentials, err
+		return credentials, nil, err
 	}
 
 	if response.Status.Code == msgs.Ok {
@@ -85,13 +85,13 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 		}
 	} else {
 		log.Print(response.Status.Msg)
-		return credentials, err
+		return credentials, nil, err
 	}
 
 	if len(response.Results) != 1 {
 		//error, should always return a single cluster detail
 		//because we are using a instanceID as the search key
-		return credentials, errors.New("cluster for instanceID " + instanceID + " not found in bind ")
+		return credentials, nil, errors.New("cluster for instanceID " + instanceID + " not found in bind ")
 	}
 
 	detail = &response.Results[0]
@@ -104,7 +104,7 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 		credentials[s.Username] = s.Password
 	}
 
-	return credentials, err
+	return credentials, detail.Services, err
 
 }
 

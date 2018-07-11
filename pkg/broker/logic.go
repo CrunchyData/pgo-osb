@@ -19,6 +19,7 @@ import (
 	"github.com/crunchydata/pgo-osb/pgocmd"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"github.com/pmorie/osb-broker-lib/pkg/broker"
+	api "k8s.io/api/core/v1"
 	"log"
 	"net/http"
 	"sync"
@@ -223,18 +224,70 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	//}
 	//}
 
-	credentials, err := pgocmd.GetClusterCredentials(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
+	credentials, services, err := pgocmd.GetClusterCredentials(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
 	if err != nil {
 		return nil, osb.HTTPStatusCodeError{
 			StatusCode: http.StatusNotFound,
 		}
 	}
 
+	/**
 	response := broker.BindResponse{
 		BindResponse: osb.BindResponse{
 			Credentials: credentials,
 		},
 	}
+	*/
+
+	//code from kibosh example
+	secretsMap := []map[string]interface{}{}
+	/**
+	for _, secret := range secrets.Items {
+		if secret.Type == api_v1.SecretTypeOpaque {
+			credentialSecrets := map[string]string{}
+			for key, val := range secret.Data {
+				credentialSecrets[key] = string(val)
+			}
+			credential := map[string]interface{}{
+				"name": secret.Name,
+				"data": credentialSecrets,
+			}
+			secretsMap = append(secretsMap, credential)
+		}
+	}
+	*/
+	//a hacked up example to see if this works with pcf
+	credential := map[string]interface{}{
+		"name": "somesecretname",
+		"data": credentials,
+	}
+	secretsMap = append(secretsMap, credential)
+
+	servicesMap := []map[string]interface{}{}
+	for _, service := range services {
+		spec := api.ServiceSpec{}
+		spec.Ports = make([]api.ServicePort, 1)
+		spec.Ports[0].Name = "postgres"
+		spec.Ports[0].Port = 5432
+		spec.ClusterIP = service.ClusterIP
+
+		credentialService := map[string]interface{}{
+			"name":   service.Name,
+			"spec":   spec, //need to return this from the pgo call
+			"status": "",   //need to return this from the pgo call
+		}
+		servicesMap = append(servicesMap, credentialService)
+	}
+	response := broker.BindResponse{
+		BindResponse: osb.BindResponse{
+			Credentials: map[string]interface{}{
+				"secrets":  secretsMap,
+				"services": servicesMap,
+			},
+		},
+	}
+	//end of code from kibosh example
+
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}
