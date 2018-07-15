@@ -270,6 +270,9 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 		spec.Ports[0].Name = "postgres"
 		spec.Ports[0].Port = 5432
 		spec.ClusterIP = service.ClusterIP
+		spec.LoadBalancerIP = service.ExternalIP
+		spec.ExternalIPs = make([]string, 1)
+		spec.ExternalIPs[0] = service.ExternalIP
 
 		credentialService := map[string]interface{}{
 			"name":   service.Name,

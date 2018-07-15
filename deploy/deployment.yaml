@@ -28,7 +28,7 @@ spec:
         - --port
         - "8443"
         - -v
-        - "4"
+        - "99"
         - --CO_USERNAME
         - "username"
         - --CO_PASSWORD
