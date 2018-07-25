@@ -95,9 +95,11 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 	}
 
 	detail = &response.Results[0]
+	users := showUser(basicAuthUsername, basicAuthPassword, APIServerURL, clientVersion, clusterName)
 
 	fmt.Println("cluster secrets are:")
-	for _, s := range detail.Secrets {
+	//for _, s := range detail.Secrets {
+	for _, s := range users.Secrets {
 		fmt.Println("secret : " + s.Name)
 		fmt.Println("username: " + s.Username)
 		fmt.Println("password: " + s.Password)
@@ -309,4 +311,63 @@ func GetCredentials(username, password string) (*http.Client, error) {
 	}
 
 	return httpclient, err
+}
+
+// showUser ...
+func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion, clusterName string) msgs.ShowUserDetail {
+
+	var userDetail msgs.ShowUserDetail
+
+	log.Print("showUser called %v\n", clusterName)
+	Selector := ""
+
+	url := APIServerURL + "/users/" + clusterName + "?selector=" + Selector + "&version=" + clientVersion
+
+	log.Print("show users called [" + url + "]")
+
+	action := "GET"
+	req, err := http.NewRequest(action, url, nil)
+
+	if err != nil {
+		log.Printf("NewRequest: %v ", err)
+		return userDetail
+	}
+
+	req.SetBasicAuth(BasicAuthUsername, BasicAuthPassword)
+
+	httpclient, err := GetCredentials(BasicAuthUsername, BasicAuthPassword)
+	if err != nil {
+		return userDetail
+	}
+
+	resp, err := httpclient.Do(req)
+	if err != nil {
+		log.Printf("Do: %v", err)
+		return userDetail
+	}
+	log.Printf("%v\n", resp)
+	StatusCheck(resp)
+
+	defer resp.Body.Close()
+
+	var response msgs.ShowUserResponse
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		log.Printf("%v\n", resp.Body)
+		log.Println(err)
+		log.Println(err)
+		return userDetail
+	}
+
+	if response.Status.Code != msgs.Ok {
+		log.Println(response.Status.Msg)
+		return userDetail
+	}
+	if len(response.Results) == 0 {
+		log.Println("no clusters found")
+		return userDetail
+	}
+
+	return response.Results[0]
+
 }

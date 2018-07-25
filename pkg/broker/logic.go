@@ -230,6 +230,7 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 			StatusCode: http.StatusNotFound,
 		}
 	}
+	log.Printf("credentials map is %v\n", credentials)
 
 	/**
 	response := broker.BindResponse{
