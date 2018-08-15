@@ -32,12 +32,18 @@ provision: ## Provisions a service instance
 	expenv -f manifests/service-instance.yaml | kubectl create -f -
 deprovision: 
 	kubectl delete serviceinstance testinstance
+provision2: ## Provisions a service instance
+	expenv -f manifests/service-instance2.yaml | kubectl create -f -
+deprovision2: 
+	kubectl delete serviceinstance testinstance2
 
 setup: 
 	go get github.com/blang/expenv
 
 bind: ## Creates a binding
 	expenv -f manifests/service-binding.yaml | kubectl create -f -
+bind2: ## Creates a binding
+	expenv -f manifests/service-binding2.yaml | kubectl create -f -
 
 help: ## Shows the help
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'

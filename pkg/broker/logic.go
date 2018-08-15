@@ -212,6 +212,7 @@ func (b *BusinessLogic) LastOperation(request *osb.LastOperationRequest, c *brok
 func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext) (*broker.BindResponse, error) {
 
 	log.Printf("Bind called req=%v\n", request)
+	log.Printf("Bind called request instanceID=%d\n", request.InstanceID)
 	log.Printf("Bind called broker ctx=%v\n", c)
 
 	//b.Lock()

@@ -1,0 +1,8 @@
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceBinding
+metadata:
+  name: testinstance2-binding
+  namespace: $CO_NAMESPACE
+spec:
+  instanceRef:
+    name: testinstance2

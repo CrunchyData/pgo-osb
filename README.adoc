@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v0.2, {docdate}
+Latest Release: v0.6, {docdate}
 
 == General
 
@@ -54,7 +54,7 @@ export GOBIN=$GOPATH/bin
 export PATH=$PATH:$GOBIN
 export COROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export CO_BASEOS=centos7
-export CO_VERSION=0.2
+export CO_VERSION=0.6
 export CO_IMAGE_TAG=$CO_BASEOS-$CO_VERSION
 export CO_IMAGE_PREFIX=crunchydata
 export CO_NAMESPACE=demo
@@ -220,6 +220,8 @@ Instance:    myinstance
 
 Parameters:
 No parameters defined
+
+$ svcat describe binding myinstance-binding --show-secrets
 
 $ kubectl describe secret myinstance-binding
 Name:         myinstance-binding

@@ -95,7 +95,7 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 	}
 
 	detail = &response.Results[0]
-	users := showUser(basicAuthUsername, basicAuthPassword, APIServerURL, clientVersion, clusterName)
+	users := showUser(basicAuthUsername, basicAuthPassword, APIServerURL, clientVersion, clusterName, selector)
 
 	fmt.Println("cluster secrets are:")
 	//for _, s := range detail.Secrets {
@@ -314,14 +314,13 @@ func GetCredentials(username, password string) (*http.Client, error) {
 }
 
 // showUser ...
-func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion, clusterName string) msgs.ShowUserDetail {
+func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion, clusterName, selector string) msgs.ShowUserDetail {
 
 	var userDetail msgs.ShowUserDetail
 
 	log.Print("showUser called %v\n", clusterName)
-	Selector := ""
 
-	url := APIServerURL + "/users/" + clusterName + "?selector=" + Selector + "&version=" + clientVersion
+	url := APIServerURL + "/users/" + clusterName + "?selector=" + selector + "&version=" + clientVersion
 
 	log.Print("show users called [" + url + "]")
 
