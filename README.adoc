@@ -66,7 +66,20 @@ Install the dep dependency tool:
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ....
 
-Get the deps:
+Install the *dep* binary into $GOPATH/bin:
+....
+cp dep $GOPATH/bin
+chmod +x $GOPATH/bin/dep
+....
+
+Get the code and deps:
+
+...
+cd $COROOT
+git clone https://github.com/crunchydata/pgo-osb.git
+git checkout master
+dep ensure
+....
 
 == Deploy Service Catalog
 
@@ -104,17 +117,22 @@ Create an instance:
 ....
 make provision
 kubectl get serviceinstance
+make provision2
+kubectl get serviceinstance
 ....
 
 You should see a pod with that service instance name:
 
 ....
 kubectl get pod --selector=name=testinstance
+kubectl get pod --selector=name=testinstance2
 ....
 
 Create a binding:
 ....
 make bind
+kubectl get servicebinding
+make bind2
 kubectl get servicebinding
 ....
 
@@ -188,79 +206,26 @@ Broker:        pgo-osb
 
 ....
 
-=== Provision an Instance
-
-....
-$ svcat provision -n demo myinstance --class pgo-osb-service --param CO_USERNAME=username --param CO_PASSWORD=password --param CO_CLUSTERNAME=myinstance --plan=default
-  Name:        myinstance       
-  Namespace:   demo             
-  Status:                       
-  Class:       pgo-osb-service  
-  Plan:        default          
-
-Parameters:
-  CO_CLUSTERNAME: myinstance
-  CO_PASSWORD: password
-  CO_USERNAME: username
-....
-
-
-=== View all instances on the cluster
-
-....
-$ svcat describe plan pgo-osb-service/default
-  Name:          default                                   
-  Description:   The default plan for the pgo osb service  
-  UUID:          86064792-7ea2-467b-af93-ac9694d96d5c      
-  Status:        Active                                    
-  Free:          true                                      
-  Class:         pgo-osb-service                           
-
-Instances:
-NAME      NAMESPACE   STATUS  
-+------------+-----------+--------+
-  myinstance   demo        Ready   
-  testy4       demo        Ready   
-....
-
 === View Instances in a Namespace
 ....
 $ svcat get instances -n demo
 NAME      NAMESPACE        CLASS         PLAN     STATUS  
 +------------+-----------+-----------------+---------+--------+
-  myinstance   demo        pgo-osb-service   default   Ready   
+  testinstance   demo        pgo-osb-service   default   Ready   
   testy4       demo        pgo-osb-service   default   Ready 
 ....
 
-=== Bind an Instance
 
+=== Cleanup Examples
+
+You can remove the bindings and instances using these commands:
 ....
-$ svcat bind -n demo myinstance --name myinstance-binding
-Name:        myinstance-binding  
-Namespace:   demo                
-Status:                          
-Secret:      myinstance-binding  
-Instance:    myinstance          
-
-Parameters:
-No parameters defined
-
-$ svcat describe binding myinstance-binding --show-secrets
-
-$ kubectl describe secret myinstance-binding
-Name:         myinstance-binding
-Namespace:    demo
-Labels:       <none>
-Annotations:  <none>
-
-Type:  Opaque
-
-Data
-====
-postgres:     10 bytes
-primaryuser:  10 bytes
-testuser:     10 bytes
+$ svcat unbind testinstance
+deleted testinstance-binding
+$ svcat unbind testinstance2
+deleted testinstance2-binding
+$ svcat deprovision testinstance
+deleted testinstance
+$ svcat deprovision testinstance2
 ....
 
-Notice in this example that we have 3 Postgres users and their passwords
-stored in this Secret as a result of the binding being created.

@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
+	"os"
 	//"github.com/crunchydata/postgres-operator/pgo/cmd"
 	"io/ioutil"
 	"log"
@@ -111,9 +112,11 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 	fmt.Println("cluster secrets are:")
 	//for _, s := range detail.Secrets {
 	for _, s := range users.Secrets {
-		fmt.Println("secret : " + s.Name)
-		fmt.Println("username: " + s.Username)
-		fmt.Println("password: " + s.Password)
+		if os.Getenv("CRUNCHY_DEBUG") == "true" {
+			fmt.Println("secret : " + s.Name)
+			fmt.Println("username: " + s.Username)
+			fmt.Println("password: " + s.Password)
+		}
 		credentials[s.Username] = s.Password
 	}
 
