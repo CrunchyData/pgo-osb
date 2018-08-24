@@ -140,31 +140,6 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 
 	response := broker.ProvisionResponse{}
 
-	/**
-	exampleInstance := &exampleInstance{
-		ID:        request.InstanceID,
-		ServiceID: request.ServiceID,
-		PlanID:    request.PlanID,
-		Params:    request.Parameters,
-	}
-
-	// Check to see if this is the same instance
-	if i := b.instances[request.InstanceID]; i != nil {
-		if i.Match(exampleInstance) {
-			response.Exists = true
-			return &response, nil
-		} else {
-			// Instance ID in use, this is a conflict.
-			description := "InstanceID in use"
-			return nil, osb.HTTPStatusCodeError{
-				StatusCode:  http.StatusConflict,
-				Description: &description,
-			}
-		}
-	}
-	b.instances[request.InstanceID] = exampleInstance
-	*/
-
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}
@@ -215,16 +190,6 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	log.Printf("Bind called request instanceID=%d\n", request.InstanceID)
 	log.Printf("Bind called broker ctx=%v\n", c)
 
-	//b.Lock()
-	//defer b.Unlock()
-
-	//instance, ok := b.instances[request.InstanceID]
-	//if !ok {
-	//return nil, osb.HTTPStatusCodeError{
-	//StatusCode: http.StatusNotFound,
-	//}
-	//}
-
 	credentials, services, err := pgocmd.GetClusterCredentials(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
 	if err != nil {
 		return nil, osb.HTTPStatusCodeError{
@@ -233,32 +198,10 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	}
 	log.Printf("credentials map is %v\n", credentials)
 
-	/**
-	response := broker.BindResponse{
-		BindResponse: osb.BindResponse{
-			Credentials: credentials,
-		},
-	}
-	*/
-
-	//code from kibosh example
+	//see code from kibosh example  for the credentials layout
+	//they require
 	secretsMap := []map[string]interface{}{}
-	/**
-	for _, secret := range secrets.Items {
-		if secret.Type == api_v1.SecretTypeOpaque {
-			credentialSecrets := map[string]string{}
-			for key, val := range secret.Data {
-				credentialSecrets[key] = string(val)
-			}
-			credential := map[string]interface{}{
-				"name": secret.Name,
-				"data": credentialSecrets,
-			}
-			secretsMap = append(secretsMap, credential)
-		}
-	}
-	*/
-	//a hacked up example to see if this works with pcf
+
 	credential := map[string]interface{}{
 		"name": "somesecretname",
 		"data": credentials,
@@ -278,8 +221,8 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 
 		credentialService := map[string]interface{}{
 			"name":   service.Name,
-			"spec":   spec, //need to return this from the pgo call
-			"status": "",   //need to return this from the pgo call
+			"spec":   spec,
+			"status": "",
 		}
 		servicesMap = append(servicesMap, credentialService)
 	}
@@ -291,7 +234,6 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 			},
 		},
 	}
-	//end of code from kibosh example
 
 	if request.AcceptsIncomplete {
 		response.Async = b.async

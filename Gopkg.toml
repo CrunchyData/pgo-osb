@@ -44,3 +44,16 @@
 [[constraint]]
   name = "github.com/Sirupsen/logrus"
   version = "v1.0.5"
+
+[[constraint]]
+  name = "github.com/crunchydata/postgres-operator"
+  revision = "cf71feed94b150c3437b99df8b4d48fd64b02294"
+
+[[override]]
+  name = "github.com/spf13/cobra"
+  revision = "f62e98d28ab7ad31d707ba837a966378465c7b57"
+
+[[override]]
+  name = "github.com/spf13/pflag"
+  revision = "9ff6c6923cfffbcd502984b8e0c80539a94968b7"
+

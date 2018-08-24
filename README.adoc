@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v0.6, {docdate}
+Latest Release: v1.0, {docdate}
 
 == General
 
@@ -70,21 +70,14 @@ Get the deps:
 
 == Deploy Service Catalog
 
-To install the Service Catalog into Kube, here I'm using
-the sc tool.
+Install the service catalog into your Kube cluster by following
+this link:
 
-Install some sc tool deps, this example assumes you have *fast* storage class
-defined on your Kube cluster:
-....
-go get -u github.com/cloudflare/cfssl/cmd/cfssl
-go get -u github.com/cloudflare/cfssl/cmd/cfssljson
-go get github.com/GoogleCloudPlatform/k8s-service-catalog/installer/cmd/sc
-sc check
-sc install --etcd-backup-storageclass "fast"
-....
+https://svc-cat.io/docs/install/
 
-Now you should have a Service Catalog installed on your Kube
-system.
+Instructions on that link are provided to also install the
+very useful *svcat* utility for inspecting and working
+with the service catalog.
 
 == Deploy
 
@@ -109,7 +102,7 @@ To test the *pgo-osb* broker...
 
 Create an instance:
 ....
-expenv -f $COROOT/manifests/service-instance.json | kubectl create -f -
+make provision
 kubectl get serviceinstance
 ....
 
@@ -121,8 +114,39 @@ kubectl get pod --selector=name=testinstance
 
 Create a binding:
 ....
-expenv -f $COROOT/manifests/service-binding.json | kubectl create -f -
+make bind
 kubectl get servicebinding
+....
+
+You can view the binding and the generated Postgres credentials
+using this command:
+....
+$ svcat describe binding testinstance-binding
+  Name:        testinstance-binding                                          
+  Namespace:   demo                                                          
+  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC  
+  Secret:      testinstance-binding                                          
+  Instance:    testinstance                                                  
+
+Parameters:
+  No parameters defined
+
+Secret Data:
+  secrets    111 bytes  
+  services   151 bytes  
+[osb@kube11 pgo-osb]$ svcat describe binding testinstance-binding --show-secrets
+  Name:        testinstance-binding                                          
+  Namespace:   demo                                                          
+  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC  
+  Secret:      testinstance-binding                                          
+  Instance:    testinstance                                                  
+
+Parameters:
+  No parameters defined
+
+Secret Data:
+  secrets    [{"data":{"postgres":"mu7BDsFi3X","primaryuser":"FHhQwZAeot","testuser":"My2g9BxjFD"},"name":"somesecretname"}]                                          
+  services   [{"name":"testinstance","spec":{"clusterIP":"10.104.162.117","externalIPs":[""],"ports":[{"name":"postgres","port":5432,"targetPort":0}]},"status":""}] 
 ....
 
 You can also use the *svcat* Service Catalog CLI to inspect
@@ -240,5 +264,3 @@ testuser:     10 bytes
 
 Notice in this example that we have 3 Postgres users and their passwords
 stored in this Secret as a result of the binding being created.
-
-You can obtain the *svcat* utility from https://svc-cat.io/docs/cli/.

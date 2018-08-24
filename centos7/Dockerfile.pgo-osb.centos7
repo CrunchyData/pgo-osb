@@ -1,6 +1,11 @@
 FROM centos:7
 
-LABEL Release="0.6" Vendor="Crunchy Data Solutions"
+LABEL Vendor="Crunchy Data Solutions" \
+        Version="1.0.0" \
+        Release="1.0.0" \
+        summary="Crunchy Data pgo-osb open service broker " \
+        description="Crunchy Data PostgreSQL Operator - pgo-osb "
+
 
 ADD ./pgo-osb /usr/local/bin/
 

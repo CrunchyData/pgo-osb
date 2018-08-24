@@ -22,7 +22,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	msgs "github.com/crunchydata/pgo-osb/apiservermsgs"
+	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
+	//"github.com/crunchydata/postgres-operator/pgo/cmd"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -60,6 +61,16 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 	if err != nil {
 		return credentials, nil, err
 	}
+
+	/**
+	args := make([]string, 1)
+	args[0] = "all"
+	cmd.Selector = INSTANCE_LABEL_KEY + "=" + instanceID
+	cmd.Httpclient = httpclient
+	log.Println("here is jeff pgo cmd call")
+	cmd.ShowCluster(args)
+	log.Println("aster jeff pgo cmd call")
+	*/
 
 	resp, err := httpclient.Do(req)
 	if err != nil {

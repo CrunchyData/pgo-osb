@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"github.com/crunchydata/pgo-osb/pkg/broker"
+	"github.com/crunchydata/postgres-operator/util"
 	"github.com/pmorie/osb-broker-lib/pkg/metrics"
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
@@ -66,15 +67,7 @@ func main() {
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
-	/**
-	debugFlag := os.Getenv("CRUNCHY_DEBUG")
-	if debugFlag == "true" {
-		log.SetLevel(log.DebugLevel)
-		log.Debug("debug flag set to true")
-	} else {
-		log.Print("debug flag set to false")
-	}
-	*/
+	log.Println(util.LABEL_PG_CLUSTER)
 
 	if options.PGO_OSB_GUID == "" {
 		u := uuid.NewV4()
