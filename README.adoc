@@ -79,6 +79,9 @@ Instructions on that link are provided to also install the
 very useful *svcat* utility for inspecting and working
 with the service catalog.
 
+WARNING:  we have found issues using Helm 2.10 when installing Service Catalog, we tend
+to use Helm 2.9.1.
+
 == Deploy
 
 To deploy the *pgo-osb* broker...
