@@ -22,6 +22,7 @@ import (
 	api "k8s.io/api/core/v1"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 )
 
@@ -29,7 +30,7 @@ import (
 // with. NewBusinessLogic is the place where you will initialize your
 // BusinessLogic the parameters passed in.
 func NewBusinessLogic(o Options) (*BusinessLogic, error) {
-	log.Print("NewBusinessLogic called")
+	log.Println("NewBusinessLogic called")
 
 	log.Printf("Options %v\n", o)
 
@@ -70,7 +71,7 @@ func truePtr() *bool {
 
 func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogResponse, error) {
 
-	log.Print("GetCatalog called")
+	log.Println("GetCatalog called")
 	response := &broker.CatalogResponse{}
 	osbResponse := &osb.CatalogResponse{
 		Services: []osb.Service{
@@ -144,12 +145,12 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		response.Async = b.async
 	}
 
-	log.Print("provision CO_USERNAME=" + request.Parameters["CO_USERNAME"].(string))
-	log.Print("provision CO_PASSWORD=" + request.Parameters["CO_PASSWORD"].(string))
-	log.Print("provision CO_CLUSTERNAME=" + request.Parameters["CO_CLUSTERNAME"].(string))
+	log.Println("provision CO_USERNAME=" + request.Parameters["CO_USERNAME"].(string))
+	log.Println("provision CO_PASSWORD=" + request.Parameters["CO_PASSWORD"].(string))
+	log.Println("provision CO_CLUSTERNAME=" + request.Parameters["CO_CLUSTERNAME"].(string))
 
-	log.Print("provision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
-	log.Print("provision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
+	log.Println("provision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
+	log.Println("provision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
 
 	pgocmd.CreateCluster(b.CO_APISERVER_URL, request.Parameters["CO_USERNAME"].(string), request.Parameters["CO_PASSWORD"].(string), request.Parameters["CO_CLUSTERNAME"].(string), b.CO_APISERVER_VERSION, request.InstanceID)
 	return &response, nil
@@ -196,7 +197,10 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 			StatusCode: http.StatusNotFound,
 		}
 	}
-	log.Printf("credentials map is %v\n", credentials)
+
+	if os.Getenv("CRUNCHY_DEBUG") == "true" {
+		log.Printf("credentials map is %v\n", credentials)
+	}
 
 	//see code from kibosh example  for the credentials layout
 	//they require
@@ -244,13 +248,13 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 
 func (b *BusinessLogic) Unbind(request *osb.UnbindRequest, c *broker.RequestContext) (*broker.UnbindResponse, error) {
 
-	log.Print("Unbind called")
+	log.Println("Unbind called")
 	return &broker.UnbindResponse{}, nil
 }
 
 func (b *BusinessLogic) Update(request *osb.UpdateInstanceRequest, c *broker.RequestContext) (*broker.UpdateInstanceResponse, error) {
 
-	log.Print("Update called")
+	log.Println("Update called")
 	response := broker.UpdateInstanceResponse{}
 	if request.AcceptsIncomplete {
 		response.Async = b.async
