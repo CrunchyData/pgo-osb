@@ -61,21 +61,23 @@ export CO_NAMESPACE=demo
 export CO_CMD=kubectl
 ....
 
+Source your .bashrc file:
+....
+. ~/.bashrc
+....
+
 Install the dep dependency tool:
 ....
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ....
 
-Install the *dep* binary into $GOPATH/bin:
+Create the working directory, then get the code and dependencies:
 ....
-cp dep $GOPATH/bin
-chmod +x $GOPATH/bin/dep
-....
-
-Get the code and deps:
-....
-cd $COROOT
+mkdir -p $HOME/odev/src $HOME/odev/bin $HOME/odev/pkg
+mkdir -p $GOPATH/src/github.com/crunchydata
+cd $GOPATH/src/github.com/crunchydata
 git clone https://github.com/crunchydata/pgo-osb.git
+cd pgo-osb
 git checkout master
 dep ensure
 ....
@@ -90,6 +92,9 @@ https://svc-cat.io/docs/install/
 Instructions on that link are provided to also install the
 very useful *svcat* utility for inspecting and working
 with the service catalog.
+
+WARNING:  we have found issues using Helm 2.10 when installing Service Catalog, we tend
+to use Helm 2.9.1.
 
 == Deploy
 
