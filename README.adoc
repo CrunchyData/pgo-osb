@@ -73,8 +73,7 @@ chmod +x $GOPATH/bin/dep
 ....
 
 Get the code and deps:
-
-...
+....
 cd $COROOT
 git clone https://github.com/crunchydata/pgo-osb.git
 git checkout master
