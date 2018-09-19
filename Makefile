@@ -13,12 +13,12 @@ linux: ## Builds a Linux executable
 main:
 	go install pgo-osb.go
 
-image: main 
+image: main
 	cp $(GOBIN)/pgo-osb .
-	docker build -t pgo-osb -f $(CO_BASEOS)/Dockerfile.pgo-osb.$(CO_BASEOS) .
-	docker tag pgo-osb $(CO_IMAGE_PREFIX)/pgo-osb:$(CO_IMAGE_TAG)
+	docker build -t pgo-osb -f $(OSB_BASEOS)/Dockerfile.pgo-osb.$(OSB_BASEOS) .
+	docker tag pgo-osb $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)
 push:
-	docker push $(CO_IMAGE_PREFIX)/pgo-osb:$(CO_IMAGE_TAG)
+	docker push $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)
 
 deploy:
 	cd deploy && ./deploy.sh
@@ -30,14 +30,14 @@ clean: ## Cleans up build artifacts
 
 provision: ## Provisions a service instance
 	expenv -f manifests/service-instance.yaml | kubectl create -f -
-deprovision: 
+deprovision:
 	kubectl delete serviceinstance testinstance
 provision2: ## Provisions a service instance
 	expenv -f manifests/service-instance2.yaml | kubectl create -f -
-deprovision2: 
+deprovision2:
 	kubectl delete serviceinstance testinstance2
 
-setup: 
+setup:
 	go get github.com/blang/expenv
 
 bind: ## Creates a binding

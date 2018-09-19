@@ -17,14 +17,14 @@ Also, users can *deprovision* a PostgreSQL database cluster using the
 OSB API.
 
 
-The *pgo-osb* broker was developed using the *OSB Starter Pack* and 
+The *pgo-osb* broker was developed using the *OSB Starter Pack* and
 associated libraries.
 
 
 See the following:
 
- * [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker) 
- * [`osb-broker-lib`](https://github.com/pmorie/osb-broker-lib). 
+ * [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker)
+ * [`osb-broker-lib`](https://github.com/pmorie/osb-broker-lib).
  * [`go-open-service-broker-client`](https://github.com/pmorie/go-open-service-broker-client)
  * [service-catalog](https://github.com/kubernetes-incubator/service-catalog)
 
@@ -44,21 +44,14 @@ the case then you will need to adjust the example service instance *service-inst
 
 == Build
 
-To build the *pgo-osb* broker...
-
-place these environment variables into your .bashrc as they
+To build the *pgo-osb* broker, place these additional environment variables into your .bashrc as they
 are used in the various scripts and deployment templates:
 ....
-export GOPATH=$HOME/odev
-export GOBIN=$GOPATH/bin
-export PATH=$PATH:$GOBIN
-export COROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
-export CO_BASEOS=centos7
-export CO_VERSION=1.0.0
-export CO_IMAGE_TAG=$CO_BASEOS-$CO_VERSION
-export CO_IMAGE_PREFIX=crunchydata
-export CO_NAMESPACE=demo
-export CO_CMD=kubectl
+export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
+export OSB_BASEOS=centos7
+export OSB_VERSION=1.0.0
+export OSB_IMAGE_TAG=$OSB_BASEOS-$OSB_VERSION
+export OSB_IMAGE_PREFIX=crunchydata
 ....
 
 Install the dep dependency tool:
@@ -66,23 +59,17 @@ Install the dep dependency tool:
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ....
 
-Install the *dep* binary into $GOPATH/bin:
+Get the code and dependencies:
 ....
-cp dep $GOPATH/bin
-chmod +x $GOPATH/bin/dep
-....
-
-Get the code and deps:
-....
-cd $COROOT
+cd $GOPATH/src/github.com/crunchydata
 git clone https://github.com/crunchydata/pgo-osb.git
-git checkout master
+cd pgo-osb
 dep ensure
 ....
 
 == Deploy Service Catalog
 
-Install the service catalog into your Kube cluster by following
+Install the service catalog into your Kubernetes cluster by following
 this link:
 
 https://svc-cat.io/docs/install/
@@ -91,16 +78,19 @@ Instructions on that link are provided to also install the
 very useful *svcat* utility for inspecting and working
 with the service catalog.
 
+WARNING:  we have found issues using Helm 2.10 when installing Service Catalog, we tend
+to use Helm 2.9.1.
+
 == Deploy
 
-To deploy the *pgo-osb* broker...
+Deploy the *pgo-osb* broker:
 
 ....
 make image
 make deploy
 ....
 
-You can verify your deployment has been successful with:
+Verify your deployment has been successful with:
 ....
 kubectl get pod --selector=app=pgo-osb
 NAME                       READY     STATUS    RESTARTS   AGE
@@ -114,6 +104,7 @@ To test the *pgo-osb* broker...
 
 Create an instance:
 ....
+cd $OSB_ROOT
 make provision
 kubectl get serviceinstance
 make provision2
@@ -139,31 +130,31 @@ You can view the binding and the generated Postgres credentials
 using this command:
 ....
 $ svcat describe binding testinstance-binding
-  Name:        testinstance-binding                                          
-  Namespace:   demo                                                          
-  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC  
-  Secret:      testinstance-binding                                          
-  Instance:    testinstance                                                  
+  Name:        testinstance-binding
+  Namespace:   demo
+  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC
+  Secret:      testinstance-binding
+  Instance:    testinstance
 
 Parameters:
   No parameters defined
 
 Secret Data:
-  secrets    111 bytes  
-  services   151 bytes  
+  secrets    111 bytes
+  services   151 bytes
 [osb@kube11 pgo-osb]$ svcat describe binding testinstance-binding --show-secrets
-  Name:        testinstance-binding                                          
-  Namespace:   demo                                                          
-  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC  
-  Secret:      testinstance-binding                                          
-  Instance:    testinstance                                                  
+  Name:        testinstance-binding
+  Namespace:   demo
+  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC
+  Secret:      testinstance-binding
+  Instance:    testinstance
 
 Parameters:
   No parameters defined
 
 Secret Data:
-  secrets    [{"data":{"postgres":"mu7BDsFi3X","primaryuser":"FHhQwZAeot","testuser":"My2g9BxjFD"},"name":"somesecretname"}]                                          
-  services   [{"name":"testinstance","spec":{"clusterIP":"10.104.162.117","externalIPs":[""],"ports":[{"name":"postgres","port":5432,"targetPort":0}]},"status":""}] 
+  secrets    [{"data":{"postgres":"mu7BDsFi3X","primaryuser":"FHhQwZAeot","testuser":"My2g9BxjFD"},"name":"somesecretname"}]
+  services   [{"name":"testinstance","spec":{"clusterIP":"10.104.162.117","externalIPs":[""],"ports":[{"name":"postgres","port":5432,"targetPort":0}]},"status":""}]
 ....
 
 You can also use the *svcat* Service Catalog CLI to inspect
@@ -173,45 +164,45 @@ the service catalog.
 
 ....
 $ svcat get brokers
-NAME                        URL                      STATUS  
+NAME                        URL                      STATUS
 +---------+-------------------------------------------+--------+
-pgo-osb   http://pgo-osb.demo.svc.cluster.local:443   Ready 
+pgo-osb   http://pgo-osb.demo.svc.cluster.local:443   Ready
 ....
 
 === Get the Service Class
 
 ....
 $ svcat get classes
-NAME         DESCRIPTION   
+NAME         DESCRIPTION
 +-----------------+--------------+
-pgo-osb-service   The pgo osb!  
+pgo-osb-service   The pgo osb!
 ....
 
 === View the Service Class
 
 ....
 $ svcat describe class pgo-osb-service
-Name:          pgo-osb-service                       
-Description:   The pgo osb!                          
-UUID:          4be12541-2945-4101-8a33-79ac0ad58750  
-Status:        Active                                
-Tags:                                                
-Broker:        pgo-osb                               
+Name:          pgo-osb-service
+Description:   The pgo osb!
+UUID:          4be12541-2945-4101-8a33-79ac0ad58750
+Status:        Active
+Tags:
+Broker:        pgo-osb
 		      Plans:
-		      NAME              DESCRIPTION            
+		      NAME              DESCRIPTION
 		+---------+--------------------------------+
-		default   The default plan for the pgo    
-		osb service 
+		default   The default plan for the pgo
+		osb service
 
 ....
 
 === View Instances in a Namespace
 ....
 $ svcat get instances -n demo
-NAME      NAMESPACE        CLASS         PLAN     STATUS  
+NAME      NAMESPACE        CLASS         PLAN     STATUS
 +------------+-----------+-----------------+---------+--------+
-  testinstance   demo        pgo-osb-service   default   Ready   
-  testy4       demo        pgo-osb-service   default   Ready 
+  testinstance   demo        pgo-osb-service   default   Ready
+  testy4       demo        pgo-osb-service   default   Ready
 ....
 
 
@@ -227,4 +218,3 @@ $ svcat deprovision testinstance
 deleted testinstance
 $ svcat deprovision testinstance2
 ....
-
