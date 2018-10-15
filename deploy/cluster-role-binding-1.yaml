@@ -5,7 +5,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: pgo-osb
-    namespace: $CO_NAMESPACE
+    namespace: $OSB_NAMESPACE
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

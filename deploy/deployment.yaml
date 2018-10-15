@@ -20,7 +20,7 @@ spec:
         - name: CRUNCHY_DEBUG
           value: "true"
         name: service-pgo-osb
-        image: $CO_IMAGE_PREFIX/pgo-osb:$CO_IMAGE_TAG
+        image: $OSB_IMAGE_PREFIX/pgo-osb:$OSB_IMAGE_TAG
         imagePullPolicy: IfNotPresent
         command:
         - /usr/local/bin/pgo-osb
@@ -38,7 +38,7 @@ spec:
         - --CO_APISERVER_URL
         - "https://postgres-operator:8443"
         - --CO_APISERVER_VERSION
-        - "3.2"
+        - "3.3.0"
         - --insecure
         - "true"
         - --logtostderr

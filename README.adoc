@@ -47,6 +47,11 @@ the case then you will need to adjust the example service instance *service-inst
 To build the *pgo-osb* broker, place these additional environment variables into your .bashrc as they
 are used in the various scripts and deployment templates:
 ....
+export GOPATH=/home/yourid/odev
+export GOBIN=$GOPATH/bin
+export PATH=$GOBIN:$PATH
+export OSB_NAMESPACE=demo
+export OSB_CMD=kubectl
 export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export OSB_BASEOS=centos7
 export OSB_VERSION=1.0.0
@@ -56,15 +61,15 @@ export OSB_IMAGE_PREFIX=crunchydata
 
 Install the dep dependency tool:
 ....
+mkdir $GOPATH/bin $GOPATH/src $GOPATH/pkg -p
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ....
 
-Get the code and dependencies:
+Get the code:
 ....
 cd $GOPATH/src/github.com/crunchydata
 git clone https://github.com/crunchydata/pgo-osb.git
 cd pgo-osb
-dep ensure
 ....
 
 == Deploy Service Catalog

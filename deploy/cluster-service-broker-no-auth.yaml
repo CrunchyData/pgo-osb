@@ -3,5 +3,5 @@
   metadata:
     name: pgo-osb
   spec:
-    url: http://pgo-osb.$CO_NAMESPACE.svc.cluster.local:443
+    url: http://pgo-osb.$OSB_NAMESPACE.svc.cluster.local:443
 
