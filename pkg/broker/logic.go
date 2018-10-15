@@ -131,10 +131,10 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 
 func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.RequestContext) (*broker.ProvisionResponse, error) {
 
-	log.Printf("Provision called with params %v\n", request.Parameters)
-	log.Printf("Provision called with InstanceID %d\n", request.InstanceID)
-	log.Printf("Provision called with ServiceID %d\n", request.ServiceID)
-	log.Printf("Provision called with PlanID %d\n", request.PlanID)
+	log.Printf("Provision called with params %s\n", request.Parameters)
+	log.Printf("Provision called with InstanceID %s\n", request.InstanceID)
+	log.Printf("Provision called with ServiceID %s\n", request.ServiceID)
+	log.Printf("Provision called with PlanID %s\n", request.PlanID)
 
 	b.Lock()
 	defer b.Unlock()

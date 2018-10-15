@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v1.0.0, {docdate}
+Latest Release: v1.1.0, {docdate}
 
 == General
 
@@ -36,6 +36,8 @@ Running the *pgo-osb* service broker assumes you have deployed
 the PostgreSQL Operator to your namespace that you will be
 deploying the service broker into.  See https://github.com/CrunchyData/postgres-operator for documentation on deploying the PostgreSQL Operator.
 
+The pgo-osb 1.1.0 version works specifically with the Postgres Operator 3.3.0!
+
 This example assumes you have created a Kube namespace called *demo*.  Adjust
 CO_NAMESPACE to suit your specific namespace value.  The example
 also assumes you are using the PostgreSQL Operator default RBAC
@@ -54,7 +56,7 @@ export OSB_NAMESPACE=demo
 export OSB_CMD=kubectl
 export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export OSB_BASEOS=centos7
-export OSB_VERSION=1.0.0
+export OSB_VERSION=1.1.0
 export OSB_IMAGE_TAG=$OSB_BASEOS-$OSB_VERSION
 export OSB_IMAGE_PREFIX=crunchydata
 ....

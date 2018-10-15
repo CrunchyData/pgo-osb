@@ -47,7 +47,7 @@
 
 [[constraint]]
   name = "github.com/crunchydata/postgres-operator"
-  revision = "cf71feed94b150c3437b99df8b4d48fd64b02294"
+  revision = "9e01935bc4809420c9ba401c16e9fcda6792aa4b"
 
 [[override]]
   name = "github.com/spf13/cobra"

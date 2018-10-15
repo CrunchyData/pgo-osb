@@ -16,18 +16,16 @@ package pgocmd
 */
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"errors"
 	"fmt"
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
-	"os"
-	//"github.com/crunchydata/postgres-operator/pgo/cmd"
+	api "github.com/crunchydata/postgres-operator/pgo/api"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -37,59 +35,20 @@ const INSTANCE_LABEL_KEY = "pgo-osb-instance"
 func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion, instanceID string) (map[string]interface{}, []msgs.ShowClusterService, error) {
 
 	credentials := make(map[string]interface{})
-	var response *msgs.ShowClusterResponse
 	var detail *msgs.ShowClusterDetail
+	fmt.Printf("fmt ShowCluster called %s\n", instanceID)
 	log.Printf("ShowCluster called %s\n", instanceID)
 	selector := INSTANCE_LABEL_KEY + "=" + instanceID
 
 	clusterName := "all"
 	log.Print("show cluster " + selector)
-
-	url := APIServerURL + "/clusters/" + clusterName + "?selector=" + selector + "&version=" + clientVersion
-
-	log.Print("show cluster called [" + url + "]")
-
-	action := "GET"
-	req, err := http.NewRequest(action, url, nil)
-	if err != nil {
-		log.Print("NewRequest: ", err)
-		return credentials, nil, err
-	}
-
-	req.SetBasicAuth(basicAuthUsername, basicAuthPassword)
-
-	httpclient, err := GetCredentials(basicAuthUsername, basicAuthPassword)
+	httpclient, SessionCredentials, err := GetCredentials(basicAuthUsername, basicAuthPassword, APIServerURL)
 	if err != nil {
 		return credentials, nil, err
 	}
 
-	/**
-	args := make([]string, 1)
-	args[0] = "all"
-	cmd.Selector = INSTANCE_LABEL_KEY + "=" + instanceID
-	cmd.Httpclient = httpclient
-	log.Println("here is jeff pgo cmd call")
-	cmd.ShowCluster(args)
-	log.Println("aster jeff pgo cmd call")
-	*/
-
-	resp, err := httpclient.Do(req)
-	if err != nil {
-		log.Print("Do: ", err)
-		return credentials, nil, err
-	}
-	log.Printf("%v\n", resp)
-	if !StatusCheck(resp) {
-		return credentials, nil, errors.New("could not authenticate")
-	}
-
-	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Printf("%v\n", resp.Body)
-		log.Print(err)
-		log.Println(err)
-		return credentials, nil, err
-	}
+	ccpImageTag := ""
+	response, err := api.ShowCluster(httpclient, clusterName, selector, ccpImageTag, SessionCredentials)
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
@@ -107,15 +66,15 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 	}
 
 	detail = &response.Results[0]
+
 	users := showUser(basicAuthUsername, basicAuthPassword, APIServerURL, clientVersion, clusterName, selector)
 
-	fmt.Println("cluster secrets are:")
-	//for _, s := range detail.Secrets {
+	log.Println("cluster secrets are:")
 	for _, s := range users.Secrets {
 		if os.Getenv("CRUNCHY_DEBUG") == "true" {
-			fmt.Println("secret : " + s.Name)
-			fmt.Println("username: " + s.Username)
-			fmt.Println("password: " + s.Password)
+			log.Println("secret : " + s.Name)
+			log.Println("username: " + s.Username)
+			log.Println("password: " + s.Password)
 		}
 		credentials[s.Username] = s.Password
 	}
@@ -132,44 +91,15 @@ func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clientVer
 	clusterName := "all"
 	deleteData := false
 	deleteBackups := false
+	deleteConfigMaps := false
 	log.Print("deleting cluster " + selector + " with delete-data " + strconv.FormatBool(deleteData))
 
-	url := APIServerURL + "/clustersdelete/" + clusterName + "?selector=" + selector + "&delete-data=" + strconv.FormatBool(deleteData) + "&delete-backups=" + strconv.FormatBool(deleteBackups) + "&version=" + clientVersion
-
-	log.Print("delete cluster called [" + url + "]")
-
-	action := "GET"
-	req, err := http.NewRequest(action, url, nil)
-	if err != nil {
-		log.Print("NewRequest: ", err)
-		return err
-	}
-
-	req.SetBasicAuth(basicAuthUsername, basicAuthPassword)
-
-	httpclient, err := GetCredentials(basicAuthUsername, basicAuthPassword)
+	httpclient, SessionCredentials, err := GetCredentials(basicAuthUsername, basicAuthPassword, APIServerURL)
 	if err != nil {
 		return err
 	}
 
-	resp, err := httpclient.Do(req)
-	if err != nil {
-		log.Print("Do: ", err)
-		return err
-	}
-	log.Printf("%v\n", resp)
-	if !StatusCheck(resp) {
-		return errors.New("could not authenticate")
-	}
-
-	defer resp.Body.Close()
-	var response msgs.DeleteClusterResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Printf("%v\n", resp.Body)
-		log.Print(err)
-		log.Println(err)
-		return err
-	}
+	response, err := api.DeleteCluster(httpclient, clusterName, selector, SessionCredentials, deleteData, deleteBackups, deleteConfigMaps)
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
@@ -194,7 +124,7 @@ func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterNa
 	//r.SecretFrom = SecretFrom
 	//r.BackupPVC = BackupPVC
 	r.UserLabels = INSTANCE_LABEL_KEY + "=" + instanceID
-	fmt.Println("user label applied is [" + r.UserLabels + "]")
+	log.Println("user label applied is [" + r.UserLabels + "]")
 	//r.BackupPath = BackupPath
 	//r.Policies = PoliciesFlag
 	//r.CCPImageTag = CCPImageTag
@@ -210,44 +140,12 @@ func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterNa
 	//r.ContainerResources = ContainerResources
 	r.ClientVersion = clientVersion
 
-	jsonValue, _ := json.Marshal(r)
-	url := APIServerURL + "/clusters"
-	log.Print("createCluster called...[" + url + "]")
-
-	action := "POST"
-	req, err := http.NewRequest(action, url, bytes.NewBuffer(jsonValue))
-	if err != nil {
-		log.Print("NewRequest: ", err)
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(BasicAuthUsername, BasicAuthPassword)
-
-	httpclient, err := GetCredentials(BasicAuthUsername, BasicAuthPassword)
+	httpclient, SessionCredentials, err := GetCredentials(BasicAuthUsername, BasicAuthPassword, APIServerURL)
 	if err != nil {
 		return err
 	}
 
-	resp, err := httpclient.Do(req)
-	if err != nil {
-		log.Print("Do: ", err)
-		return err
-	}
-
-	log.Printf("%v\n", resp)
-	if !StatusCheck(resp) {
-		return errors.New("could not authenticate")
-	}
-
-	defer resp.Body.Close()
-
-	var response msgs.CreateClusterResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Printf("%v\n", resp.Body)
-		log.Print(err)
-		log.Println(err)
-		return err
-	}
+	response, err := api.CreateCluster(httpclient, SessionCredentials, r)
 
 	if response.Status.Code == msgs.Ok {
 		for _, v := range response.Results {
@@ -261,23 +159,10 @@ func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterNa
 
 }
 
-// StatusCheck ...
-func StatusCheck(resp *http.Response) bool {
-	log.Printf("http status code is %d\n", resp.StatusCode)
-	if resp.StatusCode == 401 {
-		log.Print("Authentication Failed: %d\n", resp.StatusCode)
-		return false
-	} else if resp.StatusCode != 200 {
-		log.Print("Invalid Status Code: %d\n", resp.StatusCode)
-		return false
-	}
-
-	return true
-}
-
-func GetCredentials(username, password string) (*http.Client, error) {
+func GetCredentials(username, password, APIServerURL string) (*http.Client, *msgs.BasicAuthCredentials, error) {
 	var err error
 	var httpclient *http.Client
+	var creds *msgs.BasicAuthCredentials
 
 	var caCertPool *x509.CertPool
 	var cert tls.Certificate
@@ -288,7 +173,7 @@ func GetCredentials(username, password string) (*http.Client, error) {
 	if err != nil {
 		log.Print(err)
 		log.Print(caCertPath + " not found")
-		return httpclient, err
+		return httpclient, creds, err
 	}
 	caCertPool = x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
@@ -297,20 +182,20 @@ func GetCredentials(username, password string) (*http.Client, error) {
 	_, err = ioutil.ReadFile(clientCertPath)
 	if err != nil {
 		log.Print(clientCertPath + " not found")
-		return httpclient, err
+		return httpclient, creds, err
 	}
 
 	clientKeyPath = "/opt/apiserver-keys/client.key"
 	_, err = ioutil.ReadFile(clientKeyPath)
 	if err != nil {
 		log.Print(clientKeyPath + " not found")
-		return httpclient, err
+		return httpclient, creds, err
 	}
 
 	cert, err = tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 	if err != nil {
 		log.Print(err)
-		return httpclient, err
+		return httpclient, creds, err
 	}
 
 	log.Println("setting up httpclient with TLS")
@@ -323,8 +208,13 @@ func GetCredentials(username, password string) (*http.Client, error) {
 			},
 		},
 	}
+	creds = &msgs.BasicAuthCredentials{
+		Username:     username,
+		Password:     password,
+		APIServerURL: APIServerURL,
+	}
 
-	return httpclient, err
+	return httpclient, creds, err
 }
 
 // showUser ...
@@ -333,44 +223,12 @@ func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion,
 	var userDetail msgs.ShowUserDetail
 
 	log.Print("showUser called %v\n", clusterName)
-
-	url := APIServerURL + "/users/" + clusterName + "?selector=" + selector + "&version=" + clientVersion
-
-	log.Print("show users called [" + url + "]")
-
-	action := "GET"
-	req, err := http.NewRequest(action, url, nil)
-
-	if err != nil {
-		log.Printf("NewRequest: %v ", err)
-		return userDetail
-	}
-
-	req.SetBasicAuth(BasicAuthUsername, BasicAuthPassword)
-
-	httpclient, err := GetCredentials(BasicAuthUsername, BasicAuthPassword)
+	expired := ""
+	httpclient, SessionCredentials, err := GetCredentials(BasicAuthUsername, BasicAuthPassword, APIServerURL)
 	if err != nil {
 		return userDetail
 	}
-
-	resp, err := httpclient.Do(req)
-	if err != nil {
-		log.Printf("Do: %v", err)
-		return userDetail
-	}
-	log.Printf("%v\n", resp)
-	StatusCheck(resp)
-
-	defer resp.Body.Close()
-
-	var response msgs.ShowUserResponse
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Printf("%v\n", resp.Body)
-		log.Println(err)
-		log.Println(err)
-		return userDetail
-	}
+	response, err := api.ShowUser(httpclient, clusterName, selector, expired, SessionCredentials)
 
 	if response.Status.Code != msgs.Ok {
 		log.Println(response.Status.Msg)
