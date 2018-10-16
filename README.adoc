@@ -53,7 +53,7 @@ the case then you will need to adjust the example service instance *service-inst
 To build the *pgo-osb* broker, place these additional environment variables into your .bashrc as they
 are used in the various scripts and deployment templates:
 ....
-export GOPATH=/home/yourid/odev
+export GOPATH=$HOME/odev
 export GOBIN=$GOPATH/bin
 export PATH=$GOBIN:$PATH
 export OSB_NAMESPACE=demo
@@ -67,7 +67,7 @@ export OSB_IMAGE_PREFIX=crunchydata
 
 Install the dep dependency tool:
 ....
-mkdir $GOPATH/bin $GOPATH/src $GOPATH/pkg -p
+mkdir $GOPATH/bin $GOPATH/src/github.com/crunchydata $GOPATH/pkg -p
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 ....
 
@@ -97,6 +97,7 @@ to use Helm 2.9.1.
 Deploy the *pgo-osb* broker:
 
 ....
+make setup
 make image
 make deploy
 ....
