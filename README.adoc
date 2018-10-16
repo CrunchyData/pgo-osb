@@ -28,6 +28,11 @@ See the following:
  * [`go-open-service-broker-client`](https://github.com/pmorie/go-open-service-broker-client)
  * [service-catalog](https://github.com/kubernetes-incubator/service-catalog)
 
+== Compatibility
+
+ * pgo-osb 1.1.0 works with Postgres Operator 3.3.0
+ * pgo-osb 1.0.0 works with Postgres Operator 3.2.0
+
 == Prerequisites
 
 golang 1.9 or above is required to build this project.
@@ -36,7 +41,6 @@ Running the *pgo-osb* service broker assumes you have deployed
 the PostgreSQL Operator to your namespace that you will be
 deploying the service broker into.  See https://github.com/CrunchyData/postgres-operator for documentation on deploying the PostgreSQL Operator.
 
-The pgo-osb 1.1.0 version works specifically with the Postgres Operator 3.3.0!
 
 This example assumes you have created a Kube namespace called *demo*.  Adjust
 CO_NAMESPACE to suit your specific namespace value.  The example
