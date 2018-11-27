@@ -58,5 +58,13 @@
   revision = "9ff6c6923cfffbcd502984b8e0c80539a94968b7"
 
 [[override]]
+name = "k8s.io/apimachinery"
+version = "kubernetes-1.9.0"
+
+[[override]]
 name = "k8s.io/client-go"
 version = "6.0.0"
+
+[[override]]
+name = "k8s.io/api"
+version = "kubernetes-1.9.0"
