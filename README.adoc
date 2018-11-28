@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v1.1.0, {docdate}
+Latest Release: v1.2.0, {docdate}
 
 == General
 
@@ -30,6 +30,7 @@ See the following:
 
 == Compatibility
 
+ * pgo-osb 1.2.0 works with Postgres Operator 3.4.0
  * pgo-osb 1.1.0 works with Postgres Operator 3.3.0
  * pgo-osb 1.0.0 works with Postgres Operator 3.2.0
 
@@ -60,7 +61,7 @@ export OSB_NAMESPACE=demo
 export OSB_CMD=kubectl
 export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export OSB_BASEOS=centos7
-export OSB_VERSION=1.1.0
+export OSB_VERSION=1.2.0
 export OSB_IMAGE_TAG=$OSB_BASEOS-$OSB_VERSION
 export OSB_IMAGE_PREFIX=crunchydata
 ....
