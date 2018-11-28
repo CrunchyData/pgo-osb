@@ -47,7 +47,7 @@
 
 [[constraint]]
   name = "github.com/crunchydata/postgres-operator"
-  revision = "9e01935bc4809420c9ba401c16e9fcda6792aa4b"
+  version = "3.4.0"
 
 [[override]]
   name = "github.com/spf13/cobra"
@@ -57,3 +57,14 @@
   name = "github.com/spf13/pflag"
   revision = "9ff6c6923cfffbcd502984b8e0c80539a94968b7"
 
+[[override]]
+name = "k8s.io/apimachinery"
+version = "kubernetes-1.9.0"
+
+[[override]]
+name = "k8s.io/client-go"
+version = "6.0.0"
+
+[[override]]
+name = "k8s.io/api"
+version = "kubernetes-1.9.0"

@@ -23,12 +23,12 @@ import (
 	"net/http"
 )
 
-func ShowTest(httpclient *http.Client, arg, selector string, SessionCredentials *msgs.BasicAuthCredentials) (msgs.ClusterTestResponse, error) {
+func ShowWorkflow(httpclient *http.Client, workflowID string, SessionCredentials *msgs.BasicAuthCredentials) (msgs.ShowWorkflowResponse, error) {
 
-	var response msgs.ClusterTestResponse
+	var response msgs.ShowWorkflowResponse
 
-	url := SessionCredentials.APIServerURL + "/clusters/test/" + arg + "?selector=" + selector + "&version=" + msgs.PGO_VERSION
-	log.Debug(url)
+	url := SessionCredentials.APIServerURL + "/workflow/" + workflowID + "?version=" + msgs.PGO_VERSION
+	log.Debugf("ShowWorkflow called...[%s]", url)
 
 	action := "GET"
 	req, err := http.NewRequest(action, url, nil)
