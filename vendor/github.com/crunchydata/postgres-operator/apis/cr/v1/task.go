@@ -36,14 +36,20 @@ const PgtaskAddPolicies = "addpolicies"
 
 const PgtaskWorkflow = "workflow"
 const PgtaskWorkflowCreateClusterType = "createcluster"
-const PgtaskWorkflowSubmittedStatus = "submitted"
-const PgtaskWorkflowCompletedStatus = "completed"
+const PgtaskWorkflowBackrestRestoreType = "pgbackrestrestore"
+const PgtaskWorkflowSubmittedStatus = "task submitted"
+const PgtaskWorkflowCompletedStatus = "task completed"
 const PgtaskWorkflowID = "workflowid"
+
+const PgtaskWorkflowBackrestRestorePVCCreatedStatus = "restored PVC created"
+const PgtaskWorkflowBackrestRestorePrimaryCreatedStatus = "restored Primary created"
+const PgtaskWorkflowBackrestRestoreJobCreatedStatus = "restore job created"
 
 const PgtaskBackrest = "backrest"
 const PgtaskBackrestBackup = "backup"
 const PgtaskBackrestInfo = "info"
 const PgtaskBackrestRestore = "restore"
+const PgtaskBackrestStanzaCreate = "stanza-create"
 
 // PgtaskSpec ...
 type PgtaskSpec struct {

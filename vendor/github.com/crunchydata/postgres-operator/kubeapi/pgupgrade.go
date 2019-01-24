@@ -1,7 +1,7 @@
 package kubeapi
 
 /*
- Copyright 2017-2018 Crunchy Data Solutions, Inc.
+ Copyright 2017-2019 Crunchy Data Solutions, Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -172,5 +172,23 @@ func Createpgupgrade(client *rest.RESTClient, upgrade *crv1.Pgupgrade, namespace
 		log.Error("error creating pgupgrade " + err.Error())
 	}
 
+	return err
+}
+
+// Updatepgupgrade updates a pgupgrade
+func Updatepgupgrade(client *rest.RESTClient, upgrade *crv1.Pgupgrade, name, namespace string) error {
+
+	err := client.Put().
+		Name(name).
+		Namespace(namespace).
+		Resource(crv1.PgupgradeResourcePlural).
+		Body(upgrade).
+		Do().
+		Error()
+	if err != nil {
+		log.Error("error updating pgupgrade " + err.Error())
+	}
+
+	log.Debugf("updated pgupgrade %s", upgrade.Name)
 	return err
 }

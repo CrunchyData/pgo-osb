@@ -1,7 +1,7 @@
 package kubeapi
 
 /*
- Copyright 2017-2018 Crunchy Data Solutions, Inc.
+ Copyright 2017-2019 Crunchy Data Solutions, Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -59,7 +59,7 @@ func GetPVC(clientset *kubernetes.Clientset, name, namespace string) (*v1.Persis
 	options := meta_v1.GetOptions{}
 	pvc, err := clientset.CoreV1().PersistentVolumeClaims(namespace).Get(name, options)
 	if kerrors.IsNotFound(err) {
-		log.Error("PVC " + name + " is not found")
+		log.Debugf("PVC %s is not found", name)
 		return pvc, false, err
 	}
 
@@ -79,7 +79,7 @@ func DeletePVC(clientset *kubernetes.Clientset, name, namespace string) error {
 	delProp = meta_v1.DeletePropagationForeground
 	delOptions.PropagationPolicy = &delProp
 
-	//err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(name, &meta_v1.DeleteOptions{})
+	//err := clientset.CoreV1().PersistentVolumelaims(namespace).Delete(name, &meta_v1.DeleteOptions{})
 	err := clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(name, &delOptions)
 	if err != nil {
 		log.Error("error deleting pvc " + err.Error())
@@ -87,6 +87,25 @@ func DeletePVC(clientset *kubernetes.Clientset, name, namespace string) error {
 	}
 
 	log.Info("deleted PVC " + name)
+
+	return err
+
+}
+
+// DeletePVCs deletes all PVCs by selector
+func DeletePVCs(clientset *kubernetes.Clientset, selector, namespace string) error {
+	delOptions := meta_v1.DeleteOptions{}
+	var delProp meta_v1.DeletionPropagation
+	delProp = meta_v1.DeletePropagationForeground
+	delOptions.PropagationPolicy = &delProp
+
+	lo := meta_v1.ListOptions{LabelSelector: selector}
+
+	err := clientset.CoreV1().PersistentVolumeClaims(namespace).DeleteCollection(&delOptions, lo)
+	if err != nil {
+		log.Error("error deleting pvcs " + err.Error() + " with selector " + selector)
+		return err
+	}
 
 	return err
 
