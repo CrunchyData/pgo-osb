@@ -1,7 +1,7 @@
 package apiservermsgs
 
 /*
-Copyright 2017-2018 Crunchy Data Solutions, Inc.
+Copyright 2017 Crunchy Data Solutions, Inc.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -21,25 +21,25 @@ import (
 
 // CreateClusterRequest ...
 type CreateClusterRequest struct {
-	Name                 string
-	Namespace            string
-	NodeLabel            string
-	Password             string
-	SecretFrom           string
-	BackupPVC            string
-	UserLabels           string
-	BackupPath           string
-	Policies             string
-	CCPImageTag          string
-	Series               int
-	ReplicaCount         int
-	ServiceType          string
-	MetricsFlag          bool
-	BadgerFlag           bool
-	AutofailFlag         bool
-	ArchiveFlag          bool
-	BackrestFlag         bool
-	BackrestRestoreFrom  string
+	Name         string
+	Namespace    string
+	NodeLabel    string
+	Password     string
+	SecretFrom   string
+	BackupPVC    string
+	UserLabels   string
+	BackupPath   string
+	Policies     string
+	CCPImageTag  string
+	Series       int
+	ReplicaCount int
+	ServiceType  string
+	MetricsFlag  bool
+	BadgerFlag   bool
+	AutofailFlag bool
+	ArchiveFlag  bool
+	BackrestFlag bool
+	//BackrestRestoreFrom  string
 	PgpoolFlag           bool
 	PgbouncerFlag        bool
 	PgpoolSecret         string
@@ -59,16 +59,20 @@ type CreateClusterResponse struct {
 
 // ShowClusterService
 type ShowClusterService struct {
-	Name        string
-	Data        string
-	ClusterIP   string
-	ExternalIP  string
-	ClusterName string
-	Pgbouncer   bool
+	Name         string
+	Data         string
+	ClusterIP    string
+	ExternalIP   string
+	ClusterName  string
+	Pgbouncer    bool
+	BackrestRepo bool
 }
 
 const PodTypePrimary = "primary"
 const PodTypeReplica = "replica"
+const PodTypePgbouncer = "pgbouncer"
+const PodTypePgpool = "pgpool"
+const PodTypePgbackrest = "pgbackrest"
 const PodTypeBackup = "backup"
 const PodTypeUnknown = "unknown"
 
@@ -112,6 +116,12 @@ type ShowClusterResponse struct {
 
 // DeleteClusterResponse ...
 type DeleteClusterResponse struct {
+	Results []string
+	Status
+}
+
+// UpdateClusterResponse ...
+type UpdateClusterResponse struct {
 	Results []string
 	Status
 }

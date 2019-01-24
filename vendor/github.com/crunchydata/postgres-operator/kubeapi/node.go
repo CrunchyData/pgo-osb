@@ -1,7 +1,7 @@
 package kubeapi
 
 /*
- Copyright 2017-2018 Crunchy Data Solutions, Inc.
+ Copyright 2017-2019 Crunchy Data Solutions, Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -22,12 +22,27 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// GetNodes gets a list of Nodes
-func GetNodes(clientset *kubernetes.Clientset) (*v1.NodeList, error) {
+// GetNodes gets a list of all Nodes
+func GetAllNodes(clientset *kubernetes.Clientset) (*v1.NodeList, error) {
 	nodes, err := clientset.CoreV1().Nodes().List(meta_v1.ListOptions{})
 	if err != nil {
 		log.Error(err)
 	}
 	return nodes, err
 
+}
+
+// GetNodes gets a list of Nodes by selector
+func GetNodes(clientset *kubernetes.Clientset, selector, namespace string) (*v1.NodeList, error) {
+
+	lo := meta_v1.ListOptions{LabelSelector: selector}
+
+	nodes, err := clientset.CoreV1().Nodes().List(lo)
+	if err != nil {
+		log.Error(err)
+		log.Error("error getting nodes selector=[" + selector + "]")
+		return nodes, err
+	}
+
+	return nodes, err
 }

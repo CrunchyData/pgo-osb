@@ -1,7 +1,7 @@
 package apiservermsgs
 
 /*
-Copyright 2017-2018 Crunchy Data Solutions, Inc.
+Copyright 2017 Crunchy Data Solutions, Inc.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -24,8 +24,11 @@ type CreateScheduleRequest struct {
 	Selector        string
 	PGBackRestType  string
 	PVCName         string
-	CCPImageTag     string
 	ScheduleOptions string
+	StorageConfig   string
+	PolicyName      string
+	Database        string
+	Secret          string
 }
 
 type CreateScheduleResponse struct {

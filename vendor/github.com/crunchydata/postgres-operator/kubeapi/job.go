@@ -1,7 +1,7 @@
 package kubeapi
 
 /*
- Copyright 2017-2018 Crunchy Data Solutions, Inc.
+ Copyright 2017-2019 Crunchy Data Solutions, Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -16,6 +16,10 @@ package kubeapi
 */
 
 import (
+	"errors"
+	"fmt"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	v1batch "k8s.io/api/batch/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +44,7 @@ func GetJobs(clientset *kubernetes.Clientset, selector, namespace string) (*v1ba
 func GetJob(clientset *kubernetes.Clientset, name, namespace string) (*v1batch.Job, bool) {
 	job, err := clientset.Batch().Jobs(namespace).Get(name, meta_v1.GetOptions{})
 	if kerrors.IsNotFound(err) {
-		log.Error(err)
+		log.Debug(err)
 		return job, false
 	}
 	if err != nil {
@@ -72,15 +76,15 @@ func DeleteJob(clientset *kubernetes.Clientset, jobName, namespace string) error
 }
 
 // CreateJob deletes a backup job
-func CreateJob(clientset *kubernetes.Clientset, job *v1batch.Job, namespace string) error {
+func CreateJob(clientset *kubernetes.Clientset, job *v1batch.Job, namespace string) (string, error) {
 	result, err := clientset.Batch().Jobs(namespace).Create(job)
 	if err != nil {
 		log.Error("error creating Job " + job.Name + err.Error())
-		return err
+		return job.Name, err
 	}
 
-	log.Info("created Job " + result.Name)
-	return err
+	log.Debug("created Job " + result.Name)
+	return result.Name, err
 }
 
 // DeleteJobs deletes all jobs that match a selector
@@ -102,4 +106,42 @@ func DeleteJobs(clientset *kubernetes.Clientset, selector, namespace string) err
 	}
 
 	return err
+}
+
+func IsJobComplete(client *kubernetes.Clientset, namespace string, job *v1batch.Job, timeout time.Duration) error {
+	duration := time.After(timeout)
+	tick := time.Tick(500 * time.Millisecond)
+	for {
+		select {
+		case <-duration:
+			return fmt.Errorf("timed out waiting for job to complete: %s", job.Name)
+		case <-tick:
+			j, found := GetJob(client, job.Name, namespace)
+			if !found {
+				return errors.New("Job not found")
+			}
+			if j.Status.Failed != 0 {
+				return errors.New("job failed to run")
+			}
+			if j.Status.Succeeded != 0 {
+				return nil
+			}
+		}
+	}
+}
+
+func IsJobDeleted(client *kubernetes.Clientset, namespace string, job *v1batch.Job, timeout time.Duration) error {
+	duration := time.After(timeout)
+	tick := time.Tick(500 * time.Millisecond)
+	for {
+		select {
+		case <-duration:
+			return fmt.Errorf("timed out waiting for job to delete: %s", job.Name)
+		case <-tick:
+			_, found := GetJob(client, job.Name, namespace)
+			if !found {
+				return nil
+			}
+		}
+	}
 }
