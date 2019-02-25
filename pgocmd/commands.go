@@ -20,13 +20,14 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
-	api "github.com/crunchydata/postgres-operator/pgo/api"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
+	api "github.com/crunchydata/postgres-operator/pgo/api"
 )
 
 const INSTANCE_LABEL_KEY = "pgo-osb-instance"
@@ -48,7 +49,7 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 	}
 
 	ccpImageTag := ""
-	response, err := api.ShowCluster(httpclient, clusterName, selector, ccpImageTag, SessionCredentials)
+	response, err := api.ShowCluster(httpclient, clusterName, selector, ccpImageTag, SessionCredentials, "")
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
@@ -91,7 +92,6 @@ func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clientVer
 	clusterName := "all"
 	deleteData := false
 	deleteBackups := false
-	deleteConfigMaps := false
 	log.Print("deleting cluster " + selector + " with delete-data " + strconv.FormatBool(deleteData))
 
 	httpclient, SessionCredentials, err := GetCredentials(basicAuthUsername, basicAuthPassword, APIServerURL)
@@ -99,7 +99,7 @@ func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clientVer
 		return err
 	}
 
-	response, err := api.DeleteCluster(httpclient, clusterName, selector, SessionCredentials, deleteData, deleteBackups, deleteConfigMaps)
+	response, err := api.DeleteCluster(httpclient, clusterName, selector, SessionCredentials, deleteData, deleteBackups, "")
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
@@ -228,7 +228,7 @@ func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion,
 	if err != nil {
 		return userDetail
 	}
-	response, err := api.ShowUser(httpclient, clusterName, selector, expired, SessionCredentials)
+	response, err := api.ShowUser(httpclient, clusterName, selector, expired, SessionCredentials, "")
 
 	if response.Status.Code != msgs.Ok {
 		log.Println(response.Status.Msg)
