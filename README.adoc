@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v1.2.1, {docdate}
+Latest Release: v1.2.2, {docdate}
 
 == General
 
@@ -30,6 +30,7 @@ See the following:
 
 == Compatibility
 
+ * pgo-osb 1.2.2 works with Postgres Operator 3.5.1
  * pgo-osb 1.2.1 works with Postgres Operator 3.5.0
  * pgo-osb 1.2.0 works with Postgres Operator 3.4.0
  * pgo-osb 1.1.0 works with Postgres Operator 3.3.0

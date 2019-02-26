@@ -16,28 +16,28 @@ package api
 */
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
 	"net/http"
-	"strconv"
 )
 
-func ScaleCluster(httpclient *http.Client, arg string, ReplicaCount int, ContainerResources, StorageConfig, NodeLabel, CCPImageTag, ServiceType string, SessionCredentials *msgs.BasicAuthCredentials, ns string) (msgs.ClusterScaleResponse, error) {
+func RestoreDump(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, request *msgs.PgRestoreRequest) (msgs.RestoreResponse, error) {
 
-	var response msgs.ClusterScaleResponse
+	var response msgs.RestoreResponse
 
-	url := SessionCredentials.APIServerURL + "/clusters/scale/" + arg + "?replica-count=" + strconv.Itoa(ReplicaCount) + "&resources-config=" + ContainerResources + "&storage-config=" + StorageConfig + "&node-label=" + NodeLabel + "&version=" + msgs.PGO_VERSION + "&ccp-image-tag=" + CCPImageTag + "&service-type=" + ServiceType + "&namespace=" + ns
-	log.Debug(url)
+	jsonValue, _ := json.Marshal(request)
+	url := SessionCredentials.APIServerURL + "/pgdumprestore"
 
-	action := "GET"
+	log.Debugf("restore dump called [%s]", url)
 
-	req, err := http.NewRequest(action, url, nil)
+	action := "POST"
+	req, err := http.NewRequest(action, url, bytes.NewBuffer(jsonValue))
 	if err != nil {
 		return response, err
 	}
-
+	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(SessionCredentials.Username, SessionCredentials.Password)
 
 	resp, err := httpclient.Do(req)
@@ -45,6 +45,7 @@ func ScaleCluster(httpclient *http.Client, arg string, ReplicaCount int, Contain
 		return response, err
 	}
 	defer resp.Body.Close()
+
 	log.Debugf("%v", resp)
 	err = StatusCheck(resp)
 	if err != nil {
@@ -53,11 +54,9 @@ func ScaleCluster(httpclient *http.Client, arg string, ReplicaCount int, Contain
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		log.Printf("%v\n", resp.Body)
-		fmt.Println("Error: ", err)
 		log.Println(err)
 		return response, err
 	}
 
 	return response, err
-
 }

@@ -1,7 +1,7 @@
 package api
 
 /*
- Copyright 2017 Crunchy Data Solutions, Inc.
+ Copyright 2017-2019 Crunchy Data Solutions, Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -19,19 +19,57 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	log "github.com/Sirupsen/logrus"
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
-	"net/http"
 )
 
-func CreateFailover(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, request *msgs.CreateFailoverRequest) (msgs.CreateFailoverResponse, error) {
+func ShowpgDump(httpclient *http.Client, arg, selector string, SessionCredentials *msgs.BasicAuthCredentials, ns string) (msgs.ShowBackupResponse, error) {
 
-	var response msgs.CreateFailoverResponse
+	var response msgs.ShowBackupResponse
+	url := SessionCredentials.APIServerURL + "/pgdump/" + arg + "?version=" + msgs.PGO_VERSION + "&selector=" + selector + "&namespace=" + ns
+
+	log.Debugf("show pgdump called [%s]", url)
+
+	action := "GET"
+	req, err := http.NewRequest(action, url, nil)
+	if err != nil {
+		return response, err
+	}
+
+	req.SetBasicAuth(SessionCredentials.Username, SessionCredentials.Password)
+	resp, err := httpclient.Do(req)
+	if err != nil {
+		fmt.Println("Error: Do: ", err)
+		return response, err
+	}
+	defer resp.Body.Close()
+	log.Debugf("%v", resp)
+	err = StatusCheck(resp)
+	if err != nil {
+		return response, err
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		log.Debugf("%v", resp.Body)
+		log.Debug(err)
+		return response, err
+	}
+
+	return response, err
+
+}
+
+func CreatepgDumpBackup(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, request *msgs.CreatepgDumpBackupRequest) (msgs.CreatepgDumpBackupResponse, error) {
+
+	var response msgs.CreatepgDumpBackupResponse
 
 	jsonValue, _ := json.Marshal(request)
-	url := SessionCredentials.APIServerURL + "/failover"
 
-	log.Debugf("create failover called [%s]", url)
+	url := SessionCredentials.APIServerURL + "/pgdumpbackup"
+
+	log.Debugf("create pgdump backup called [%s]", url)
 
 	action := "POST"
 	req, err := http.NewRequest(action, url, bytes.NewBuffer(jsonValue))
@@ -55,47 +93,10 @@ func CreateFailover(httpclient *http.Client, SessionCredentials *msgs.BasicAuthC
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		log.Printf("%v\n", resp.Body)
-		log.Println(err)
-		return response, err
-	}
-
-	return response, err
-}
-
-func QueryFailover(httpclient *http.Client, arg string, SessionCredentials *msgs.BasicAuthCredentials, ns string) (msgs.QueryFailoverResponse, error) {
-
-	var response msgs.QueryFailoverResponse
-
-	url := SessionCredentials.APIServerURL + "/failover/" + arg + "?version=" + msgs.PGO_VERSION + "&namespace=" + ns
-	log.Debugf("query failover called [%s]", url)
-
-	action := "GET"
-
-	req, err := http.NewRequest(action, url, nil)
-	if err != nil {
-		return response, err
-	}
-
-	req.SetBasicAuth(SessionCredentials.Username, SessionCredentials.Password)
-
-	resp, err := httpclient.Do(req)
-	if err != nil {
-		return response, err
-	}
-	defer resp.Body.Close()
-	log.Debugf("%v", resp)
-	err = StatusCheck(resp)
-	if err != nil {
-		return response, err
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Printf("%v\n", resp.Body)
 		fmt.Println("Error: ", err)
 		log.Println(err)
 		return response, err
 	}
 
 	return response, err
-
 }
