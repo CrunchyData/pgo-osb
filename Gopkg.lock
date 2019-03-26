@@ -18,14 +18,6 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
-  digest = "1:ecf78eacf406c42f07f66d6b79fda24d2b92dc711bfd0760d0c931678f9621fe"
-  name = "github.com/Sirupsen/logrus"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "ad15b42461921f1fb3529b058c6786c6a45d5162"
-  version = "v1.1.1"
-
-[[projects]]
   branch = "master"
   digest = "1:707ebe952a8b3d00b343c01536c79c73771d100f63ec6babeaed5c79e2b8a8dd"
   name = "github.com/beorn7/perks"
@@ -34,7 +26,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:916339df5e9cd79a01ac02d064005d40e4e934727877b35061acc3ba3a44f264"
+  digest = "1:4c55656d7655f726e1622184fe53cf7e70e08cba1d314b83d59f627f40490565"
   name = "github.com/crunchydata/postgres-operator"
   packages = [
     "apis/cr/v1",
@@ -45,8 +37,8 @@
     "util",
   ]
   pruneopts = "NUT"
-  revision = "62ec8adddfc892df984bb389e3f14886f1ebf2f6"
-  version = "3.5.1"
+  revision = "7e867ebf211b488def26dfaf10d7b2b5bbd6f5f6"
+  version = "3.5.2"
 
 [[projects]]
   branch = "master"
@@ -399,6 +391,14 @@
   version = "0.0.3"
 
 [[projects]]
+  digest = "1:bb9033d47c116ea3b981ff159bdef73df8351b0b9700da2066339b97211b1bf0"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "dae0fa8d5b0c810a8ab733fbd5510c7cae84eca4"
+  version = "v1.4.0"
+
+[[projects]]
   digest = "1:ed545897e7363038a3e467e8b24c12e7f540f6a114c08a7dca7746a3fe291358"
   name = "github.com/spf13/pflag"
   packages = ["."]
@@ -632,7 +632,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/Sirupsen/logrus",
     "github.com/crunchydata/postgres-operator/apiservermsgs",
     "github.com/crunchydata/postgres-operator/pgo/api",
     "github.com/crunchydata/postgres-operator/util",
@@ -644,6 +643,7 @@
     "github.com/prometheus/client_golang/prometheus",
     "github.com/satori/go.uuid",
     "github.com/shawn-hurley/osb-broker-k8s-lib/middleware",
+    "github.com/sirupsen/logrus",
     "gopkg.in/yaml.v2",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",

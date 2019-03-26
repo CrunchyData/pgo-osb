@@ -1,8 +1,8 @@
 FROM centos:7
 
 LABEL Vendor="Crunchy Data Solutions" \
-        Version="1.2.2" \
-        Release="1.2.2" \
+        Version="1.2.3" \
+        Release="1.2.3" \
         summary="Crunchy Data pgo-osb open service broker " \
         description="Crunchy Data PostgreSQL Operator - pgo-osb "
 

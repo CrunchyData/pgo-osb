@@ -17,11 +17,12 @@ limitations under the License.
 
 import (
 	"errors"
-	log "github.com/Sirupsen/logrus"
-	crv1 "github.com/crunchydata/pgo-osb/apis/cr/v1"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
+
+	crv1 "github.com/crunchydata/pgo-osb/apis/cr/v1"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 type ClusterStruct struct {
