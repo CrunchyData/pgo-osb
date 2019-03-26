@@ -64,7 +64,7 @@ export OSB_NAMESPACE=demo
 export OSB_CMD=kubectl
 export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export OSB_BASEOS=centos7
-export OSB_VERSION=1.2.1
+export OSB_VERSION=1.2.3
 export OSB_IMAGE_TAG=$OSB_BASEOS-$OSB_VERSION
 export OSB_IMAGE_PREFIX=crunchydata
 ....
