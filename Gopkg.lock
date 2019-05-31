@@ -26,7 +26,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:4c55656d7655f726e1622184fe53cf7e70e08cba1d314b83d59f627f40490565"
+  digest = "1:9187af3aff11828930bb5b3d8005f34e367bf658c6187eae8f8403cb9bcff0f5"
   name = "github.com/crunchydata/postgres-operator"
   packages = [
     "apis/cr/v1",
@@ -37,8 +37,8 @@
     "util",
   ]
   pruneopts = "NUT"
-  revision = "7e867ebf211b488def26dfaf10d7b2b5bbd6f5f6"
-  version = "3.5.2"
+  revision = "ee09d3a2b6730f724b907fe328a6cc96de223eff"
+  version = "3.5.3"
 
 [[projects]]
   branch = "master"
