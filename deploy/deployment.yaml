@@ -38,7 +38,7 @@ spec:
         - --CO_APISERVER_URL
         - "https://postgres-operator:8443"
         - --CO_APISERVER_VERSION
-        - "3.5.2"
+        - "3.5.3"
         - --insecure
         - "true"
         - --logtostderr
