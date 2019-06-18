@@ -29,16 +29,16 @@ spec:
         - "8443"
         - -v
         - "99"
-        - --CO_USERNAME
+        - --PGO_USERNAME
         - "username"
-        - --CO_PASSWORD
+        - --PGO_PASSWORD
         - "password"
         - --PGO_OSB_GUID
         - "4be12541-2945-4101-8a33-79ac0ad58750"
-        - --CO_APISERVER_URL
+        - --PGO_APISERVER_URL
         - "https://postgres-operator:8443"
-        - --CO_APISERVER_VERSION
-        - "3.5.2"
+        - --PGO_APISERVER_VERSION
+        - "4.0.0"
         - --insecure
         - "true"
         - --logtostderr

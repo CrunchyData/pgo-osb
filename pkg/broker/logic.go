@@ -16,14 +16,15 @@ limitations under the License.
 */
 
 import (
-	"github.com/crunchydata/pgo-osb/pgocmd"
-	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	"github.com/pmorie/osb-broker-lib/pkg/broker"
-	api "k8s.io/api/core/v1"
 	"log"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/crunchydata/pgo-osb/pgocmd"
+	osb "github.com/pmorie/go-open-service-broker-client/v2"
+	"github.com/pmorie/osb-broker-lib/pkg/broker"
+	api "k8s.io/api/core/v1"
 )
 
 // NewBusinessLogic is a hook that is called with the Options the program is run
@@ -40,10 +41,10 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 	return &BusinessLogic{
 		async:                o.Async,
 		PGO_OSB_GUID:         o.PGO_OSB_GUID,
-		CO_APISERVER_URL:     o.CO_APISERVER_URL,
-		CO_APISERVER_VERSION: o.CO_APISERVER_VERSION,
-		CO_USERNAME:          o.CO_USERNAME,
-		CO_PASSWORD:          o.CO_PASSWORD,
+		PGO_APISERVER_URL:     o.PGO_APISERVER_URL,
+		PGO_APISERVER_VERSION: o.PGO_APISERVER_VERSION,
+		PGO_USERNAME:          o.PGO_USERNAME,
+		PGO_PASSWORD:          o.PGO_PASSWORD,
 	}, nil
 }
 
@@ -56,10 +57,10 @@ type BusinessLogic struct {
 	sync.RWMutex
 	// Add fields here! These fields are provided purely as an example
 	PGO_OSB_GUID         string
-	CO_APISERVER_URL     string
-	CO_APISERVER_VERSION string
-	CO_USERNAME          string
-	CO_PASSWORD          string
+	PGO_APISERVER_URL     string
+	PGO_APISERVER_VERSION string
+	PGO_USERNAME          string
+	PGO_PASSWORD          string
 }
 
 var _ broker.Interface = &BusinessLogic{}
@@ -99,15 +100,19 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 										"type":    "object",
 										"$schema": "http://json-schema.org/draft-04/schema#",
 										"properties": map[string]interface{}{
-											"CO_USERNAME": map[string]interface{}{
+											"PGO_USERNAME": map[string]interface{}{
 												"type":    "string",
 												"default": "Clear",
 											},
-											"CO_CLUSTERNAME": map[string]interface{}{
+											"PGO_CLUSTERNAME": map[string]interface{}{
 												"type":    "string",
 												"default": "Clear",
 											},
-											"CO_PASSWORD": map[string]interface{}{
+											"PGO_PASSWORD": map[string]interface{}{
+												"type":    "string",
+												"default": "Clear",
+											},
+											"PGO_NAMESPACE": map[string]interface{}{
 												"type":    "string",
 												"default": "Clear",
 											},
@@ -145,14 +150,14 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		response.Async = b.async
 	}
 
-	log.Println("provision CO_USERNAME=" + request.Parameters["CO_USERNAME"].(string))
-	log.Println("provision CO_PASSWORD=" + request.Parameters["CO_PASSWORD"].(string))
-	log.Println("provision CO_CLUSTERNAME=" + request.Parameters["CO_CLUSTERNAME"].(string))
+	log.Println("provision PGO_USERNAME=" + request.Parameters["PGO_USERNAME"].(string))
+	log.Println("provision PGO_PASSWORD=" + request.Parameters["PGO_PASSWORD"].(string))
+	log.Println("provision PGO_CLUSTERNAME=" + request.Parameters["PGO_CLUSTERNAME"].(string))
 
-	log.Println("provision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
-	log.Println("provision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
+	log.Println("provision PGO_APISERVER_URL=" + b.PGO_APISERVER_URL)
+	log.Println("provision PGO_APISERVER_VERSION=" + b.PGO_APISERVER_VERSION)
 
-	pgocmd.CreateCluster(b.CO_APISERVER_URL, request.Parameters["CO_USERNAME"].(string), request.Parameters["CO_PASSWORD"].(string), request.Parameters["CO_CLUSTERNAME"].(string), b.CO_APISERVER_VERSION, request.InstanceID)
+	pgocmd.CreateCluster(b.PGO_APISERVER_URL, request.Parameters["PGO_USERNAME"].(string), request.Parameters["PGO_PASSWORD"].(string), request.Parameters["PGO_CLUSTERNAME"].(string), b.PGO_APISERVER_VERSION, request.InstanceID, request.Parameters["PGO_NAMESPACE"].(string))
 	return &response, nil
 }
 
@@ -168,10 +173,10 @@ func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.R
 
 	log.Printf("Deprovision instanceID=%d\n", request.InstanceID)
 	log.Printf("Deprovision request=%v\n", request)
-	log.Printf("Deprovision CO_APISERVER_URL=" + b.CO_APISERVER_URL)
-	log.Printf("Deprovision CO_APISERVER_VERSION=" + b.CO_APISERVER_VERSION)
+	log.Printf("Deprovision PGO_APISERVER_URL=" + b.PGO_APISERVER_URL)
+	log.Printf("Deprovision PGO_APISERVER_VERSION=" + b.PGO_APISERVER_VERSION)
 
-	pgocmd.DeleteCluster(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
+	pgocmd.DeleteCluster(b.PGO_APISERVER_URL, b.PGO_USERNAME, b.PGO_PASSWORD, b.PGO_APISERVER_VERSION, request.InstanceID)
 
 	if request.AcceptsIncomplete {
 		response.Async = b.async
@@ -191,7 +196,7 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	log.Printf("Bind called request instanceID=%d\n", request.InstanceID)
 	log.Printf("Bind called broker ctx=%v\n", c)
 
-	credentials, services, err := pgocmd.GetClusterCredentials(b.CO_APISERVER_URL, b.CO_USERNAME, b.CO_PASSWORD, b.CO_APISERVER_VERSION, request.InstanceID)
+	credentials, services, err := pgocmd.GetClusterCredentials(b.PGO_APISERVER_URL, b.PGO_USERNAME, b.PGO_PASSWORD, b.PGO_APISERVER_VERSION, request.InstanceID)
 	if err != nil {
 		return nil, osb.HTTPStatusCodeError{
 			StatusCode: http.StatusNotFound,

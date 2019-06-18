@@ -26,11 +26,17 @@ import (
 	"os"
 	"strconv"
 
+	crv1 "github.com/crunchydata/postgres-operator/apis/cr/v1"
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
+	"github.com/crunchydata/postgres-operator/kubeapi"
 	api "github.com/crunchydata/postgres-operator/pgo/api"
+	"k8s.io/client-go/rest"
 )
 
 const INSTANCE_LABEL_KEY = "pgo-osb-instance"
+
+// RESTClient ...
+var RESTClient *rest.RESTClient
 
 // GetClusterCredentials ...
 func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion, instanceID string) (map[string]interface{}, []msgs.ShowClusterService, error) {
@@ -48,8 +54,22 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 		return credentials, nil, err
 	}
 
+	clusterList := crv1.PgclusterList{}
+	err = kubeapi.GetpgclustersBySelector(RESTClient, &clusterList, selector, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	pgCluster := clusterList.Items[0]
+
 	ccpImageTag := ""
-	response, err := api.ShowCluster(httpclient, clusterName, selector, ccpImageTag, SessionCredentials, "")
+	showClusterRequest := msgs.ShowClusterRequest{
+		Clustername:   clusterName,
+		Selector:      selector,
+		Ccpimagetag:   ccpImageTag,
+		ClientVersion: clientVersion,
+		Namespace:     pgCluster.GetNamespace(),
+	}
+	response, err := api.ShowCluster(httpclient, SessionCredentials, &showClusterRequest)
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
@@ -68,7 +88,8 @@ func GetClusterCredentials(APIServerURL, basicAuthUsername, basicAuthPassword, c
 
 	detail = &response.Results[0]
 
-	users := showUser(basicAuthUsername, basicAuthPassword, APIServerURL, clientVersion, clusterName, selector)
+	users := showUser(basicAuthUsername, basicAuthPassword, APIServerURL, clientVersion, clusterName, selector,
+		pgCluster.GetNamespace())
 
 	log.Println("cluster secrets are:")
 	for _, s := range users.Secrets {
@@ -99,7 +120,22 @@ func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clientVer
 		return err
 	}
 
-	response, err := api.DeleteCluster(httpclient, clusterName, selector, SessionCredentials, deleteData, deleteBackups, "")
+	clusterList := crv1.PgclusterList{}
+	err = kubeapi.GetpgclustersBySelector(RESTClient, &clusterList, selector, "")
+	if err != nil {
+		return err
+	}
+	pgCluster := clusterList.Items[0]
+
+	deleteClusterRequest := msgs.DeleteClusterRequest{
+		Clustername:   clusterName,
+		Selector:      selector,
+		ClientVersion: clientVersion,
+		Namespace:     pgCluster.GetNamespace(),
+		DeleteData:    deleteData,
+		DeleteBackups: deleteBackups,
+	}
+	response, err := api.DeleteCluster(httpclient, &deleteClusterRequest, SessionCredentials)
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
@@ -114,7 +150,7 @@ func DeleteCluster(APIServerURL, basicAuthUsername, basicAuthPassword, clientVer
 }
 
 // CreateCluster ....
-func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterName, clientVersion, instanceID string) error {
+func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterName, clientVersion, instanceID, namespace string) error {
 	var err error
 
 	r := new(msgs.CreateClusterRequest)
@@ -139,6 +175,7 @@ func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterNa
 	//r.ReplicaStorageConfig = ReplicaStorageConfig
 	//r.ContainerResources = ContainerResources
 	r.ClientVersion = clientVersion
+	r.Namespace = namespace
 
 	httpclient, SessionCredentials, err := GetCredentials(BasicAuthUsername, BasicAuthPassword, APIServerURL)
 	if err != nil {
@@ -146,13 +183,16 @@ func CreateCluster(APIServerURL, BasicAuthUsername, BasicAuthPassword, clusterNa
 	}
 
 	response, err := api.CreateCluster(httpclient, SessionCredentials, r)
-
-	if response.Status.Code == msgs.Ok {
+	if err != nil {
+		log.Println(err)
+		return err
+	} else if response.Status.Code != msgs.Ok {
+		log.Println(response.Msg)
+		return errors.New(response.Msg)
+	} else {
 		for _, v := range response.Results {
 			log.Println(v)
 		}
-	} else {
-		log.Print(response.Status.Msg)
 	}
 
 	return err
@@ -218,7 +258,7 @@ func GetCredentials(username, password, APIServerURL string) (*http.Client, *msg
 }
 
 // showUser ...
-func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion, clusterName, selector string) msgs.ShowUserDetail {
+func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion, clusterName, selector, ns string) msgs.ShowUserDetail {
 
 	var userDetail msgs.ShowUserDetail
 
@@ -228,7 +268,7 @@ func showUser(BasicAuthUsername, BasicAuthPassword, APIServerURL, clientVersion,
 	if err != nil {
 		return userDetail
 	}
-	response, err := api.ShowUser(httpclient, clusterName, selector, expired, SessionCredentials, "")
+	response, err := api.ShowUser(httpclient, clusterName, selector, expired, SessionCredentials, ns)
 
 	if response.Status.Code != msgs.Ok {
 		log.Println(response.Status.Msg)

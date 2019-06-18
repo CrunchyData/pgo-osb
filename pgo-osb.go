@@ -18,23 +18,27 @@ limitations under the License.
 import (
 	"context"
 	"flag"
-	"github.com/crunchydata/pgo-osb/pkg/broker"
-	"github.com/crunchydata/postgres-operator/util"
-	"github.com/pmorie/osb-broker-lib/pkg/metrics"
-	"github.com/pmorie/osb-broker-lib/pkg/rest"
-	"github.com/pmorie/osb-broker-lib/pkg/server"
-	prom "github.com/prometheus/client_golang/prometheus"
-	"github.com/satori/go.uuid"
-	"github.com/shawn-hurley/osb-broker-k8s-lib/middleware"
-	clientset "k8s.io/client-go/kubernetes"
-	clientrest "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"log"
 	"os"
 	"os/signal"
 	"path"
 	"strconv"
 	"syscall"
+
+	"github.com/crunchydata/pgo-osb/pgocmd"
+
+	"github.com/crunchydata/pgo-osb/pkg/broker"
+	"github.com/crunchydata/postgres-operator/config"
+	"github.com/crunchydata/postgres-operator/util"
+	"github.com/pmorie/osb-broker-lib/pkg/metrics"
+	"github.com/pmorie/osb-broker-lib/pkg/rest"
+	"github.com/pmorie/osb-broker-lib/pkg/server"
+	prom "github.com/prometheus/client_golang/prometheus"
+	uuid "github.com/satori/go.uuid"
+	"github.com/shawn-hurley/osb-broker-k8s-lib/middleware"
+	clientset "k8s.io/client-go/kubernetes"
+	clientrest "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 var options struct {
@@ -42,8 +46,8 @@ var options struct {
 
 	Port                 int
 	Insecure             bool
-	CO_APISERVER_URL     string
-	CO_APISERVER_VERSION string
+	PGO_APISERVER_URL     string
+	PGO_APISERVER_VERSION string
 	TLSCert              string
 	TLSKey               string
 	TLSCertFile          string
@@ -67,7 +71,7 @@ func main() {
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
-	log.Println(util.LABEL_PG_CLUSTER)
+	log.Println(config.LABEL_PG_CLUSTER)
 
 	if options.PGO_OSB_GUID == "" {
 		u := uuid.NewV4()
@@ -137,6 +141,12 @@ func runWithContext(ctx context.Context) error {
 		s.Router.Use(tr.Middleware)
 	}
 
+	RESTClient, err := getRestClient(options.KubeConfig)
+	if err != nil {
+		return err
+	}
+	pgocmd.RESTClient = RESTClient
+
 	log.Print("Starting broker!")
 
 	if options.Insecure {
@@ -157,7 +167,7 @@ func runWithContext(ctx context.Context) error {
 	return err
 }
 
-func getKubernetesClient(kubeConfigPath string) (clientset.Interface, error) {
+func getKubernetesConfig(kubeConfigPath string) (*clientrest.Config, error) {
 	var clientConfig *clientrest.Config
 	var err error
 	if kubeConfigPath == "" {
@@ -176,7 +186,30 @@ func getKubernetesClient(kubeConfigPath string) (clientset.Interface, error) {
 			return nil, err
 		}
 	}
-	return clientset.NewForConfig(clientConfig)
+	return clientConfig, nil
+}
+
+func getKubernetesClient(kubeConfigPath string) (clientset.Interface, error) {
+	kubeConfig, err := getKubernetesConfig(kubeConfigPath)
+	if err != nil {
+		return nil, err
+	}
+	return clientset.NewForConfig(kubeConfig)
+}
+
+func getRestClient(kubeConfigPath string) (*clientrest.RESTClient, error) {
+
+	kubeConfig, err := getKubernetesConfig(kubeConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
+	restClient, _, err := util.NewClient(kubeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return restClient, nil
 }
 
 func cancelOnInterrupt(ctx context.Context, f context.CancelFunc) {

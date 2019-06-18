@@ -17,16 +17,13 @@ limitations under the License.
 
 import ()
 
-// ReloadResponse ...
-type ReloadResponse struct {
-	Results []string
-	Status
+type NamespaceResult struct {
+	Namespace  string
+	UserAccess bool
 }
 
-// ReloadRequest ...
-type ReloadRequest struct {
-	Namespace string
-	Args      []string
-	Selector  string
-	//ConfigMapName       string
+// ShowNamespaceResponse ...
+type ShowNamespaceResponse struct {
+	Results []NamespaceResult
+	Status
 }

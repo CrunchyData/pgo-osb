@@ -16,27 +16,25 @@ package api
 */
 
 import (
-	"bytes"
 	"encoding/json"
+	"fmt"
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
-func Restore(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, request *msgs.RestoreRequest) (msgs.RestoreResponse, error) {
+func ShowNamespace(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, ns string) (msgs.ShowNamespaceResponse, error) {
 
-	var response msgs.RestoreResponse
+	var response msgs.ShowNamespaceResponse
 
-	jsonValue, _ := json.Marshal(request)
-	url := SessionCredentials.APIServerURL + "/restore"
+	url := SessionCredentials.APIServerURL + "/namespace?version=" + msgs.PGO_VERSION + "&namespace=" + ns
+	log.Debug(url)
 
-	log.Debugf("restore called [%s]", url)
-
-	action := "POST"
-	req, err := http.NewRequest(action, url, bytes.NewBuffer(jsonValue))
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return response, err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(SessionCredentials.Username, SessionCredentials.Password)
 
@@ -54,9 +52,12 @@ func Restore(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredenti
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		log.Printf("%v\n", resp.Body)
+		fmt.Print("Error: ")
+		fmt.Println(err)
 		log.Println(err)
 		return response, err
 	}
 
 	return response, err
+
 }
