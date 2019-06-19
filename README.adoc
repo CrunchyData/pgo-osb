@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v1.2.3, {docdate}
+Latest Release: v1.3.0, {docdate}
 
 == General
 
@@ -30,25 +30,55 @@ See the following:
 
 == Compatibility
 
- * pgo-osb 1.2.3 works with Postgres Operator 3.5.2
- * pgo-osb 1.2.2 works with Postgres Operator 3.5.1
- * pgo-osb 1.2.1 works with Postgres Operator 3.5.0
- * pgo-osb 1.2.0 works with Postgres Operator 3.4.0
- * pgo-osb 1.1.0 works with Postgres Operator 3.3.0
- * pgo-osb 1.0.0 works with Postgres Operator 3.2.0
+ * pgo-osb 1.3.0 works with Postgres Operator 4.0.0
 
 == Prerequisites
 
 golang 1.9 or above is required to build this project.
 
-Running the *pgo-osb* service broker assumes you have deployed
-the PostgreSQL Operator to your namespace that you will be
-deploying the service broker into.  See https://github.com/CrunchyData/postgres-operator for documentation on deploying the PostgreSQL Operator.
+Running the *pgo-osb* service broker assumes you have successfully deployed
+the PostgreSQL Operator.  See https://github.com/CrunchyData/postgres-operator for documentation on deploying the PostgreSQL Operator.
 
+Please note that if *pgo-osb* is deployed to a different namespace than the PostgreSQL Operator, DNS must be utilized when specifying 
+the URL for the PostgreSQL Operator API server.  This is done using environment variable `PGO_APISERVER_URL` in the *pgo-osb* 
+`deployment.yaml` file (located in directory `$OSB_ROOT/deploy`).  For instance, if the PostgreSQL Operator is deployed to namespace
+`pgo`, the `PGO_APISERVER_URL` environment variable would be set in this file  as follows:
 
-This example assumes you have created a Kube namespace called *demo*.  Adjust
-CO_NAMESPACE to suit your specific namespace value.  The example
-also assumes you are using the PostgreSQL Operator default RBAC
+```
+- --PGO_APISERVER_URL
+- "https://postgres-operator.pgo.svc.cluster.local:8443"
+
+```
+
+However, if *pgo-osb* is deployed to the same namespace as the PostgreSQL Operator, then the PostgreSQL Operator service name can simply
+be utilized:
+
+```
+- --PGO_APISERVER_URL
+- "https://postgres-operator:8443"
+
+```
+
+Additionally, *pgo-osb* must also be configured with the certificates needed to properly authenticate into and trust the PostgreSQL Operator
+API server.  When installing the PostgreSQL Operator API server these certificates are automatically generated, and must be copied 
+into directory `$OSB_ROOT/deploy` prior to deploying *pgo-osb*.  This allows the certificates to be stored in a secret that can be utilized 
+by *pgo-osb* when accessing the PostgreSQL Operator API server.  For instance, if the PostgreSQL Operator was installed using the
+`bash` installation method, the certificates can be copied as follows:
+
+```
+cp $PGOROOT/conf/postgres-operator/server.crt $PGOROOT/conf/postgres-operator/server.key $OSB_ROOT/deploy
+```
+
+Or if the PostgreSQL Operator was installed using Ansible, then the certificates can be copied from your home directory as follows:
+
+```
+cp "${HOME}"/.pgo/"${PGO_OPERATOR_NAMESPACE}"/output/server.crt $OSB_ROOT/deploy
+cp "${HOME}"/.pgo/"${PGO_OPERATOR_NAMESPACE}"/output/server.pem $OSB_ROOT/deploy/server.key
+```
+
+This example also assumes you have created a Kube namespace called *demo*.  Adjust
+OSB_NAMESPACE to suit your specific namespace value.  And lastly, the example
+assumes you are using the PostgreSQL Operator default RBAC
 account called *username* with a password of *password*.  If this is not
 the case then you will need to adjust the example service instance *service-instance.yaml*.
 
@@ -64,7 +94,7 @@ export OSB_NAMESPACE=demo
 export OSB_CMD=kubectl
 export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export OSB_BASEOS=centos7
-export OSB_VERSION=1.2.3
+export OSB_VERSION=1.3.0
 export OSB_IMAGE_TAG=$OSB_BASEOS-$OSB_VERSION
 export OSB_IMAGE_PREFIX=crunchydata
 ....
@@ -126,6 +156,12 @@ kubectl get serviceinstance
 make provision2
 kubectl get serviceinstance
 ....
+
+_Please note the `ServiceInstance` objects created when running the `make provision` and `make provision2` commands
+above will create PostgreSQL cluster's in the default namespace set for the PostgreSQL Operator according to the 
+`PGO_NAMESPACE` environment variable set in your environment.  If you would like the clusters to be provisioned in 
+another namespace, please set the proper namespace using the `PGO_NAMESPACE` parameter in files 
+`$OSB_ROOT/manifests/service-instance.yaml` and `$OSB_ROOT/manifests/service-instance2.yaml`._
 
 You should see a pod with that service instance name:
 

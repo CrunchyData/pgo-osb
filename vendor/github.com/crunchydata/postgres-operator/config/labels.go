@@ -1,7 +1,7 @@
-package util
+package config
 
 /*
- Copyright 2017 Crunchy Data Solutions, Inc.
+ Copyright 2019 Crunchy Data Solutions, Inc.
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -20,14 +20,14 @@ const LABEL_NAME = "name"
 const LABEL_SELECTOR = "selector"
 const LABEL_OPERATOR = "postgres-operator"
 const LABEL_PG_CLUSTER = "pg-cluster"
-const LABEL_PG_DATABASE = "pg-database"
+
 const LABEL_PGBACKUP = "pgbackup"
 const LABEL_PGTASK = "pg-task"
 
 const LABEL_AUTOFAIL = "autofail"
 const LABEL_AUTOFAIL_REPLACE_REPLICA = "autofail-replace-replica"
 const LABEL_FAILOVER = "failover"
-const LABEL_PRIMARY = "primary"
+
 const LABEL_TARGET = "target"
 const LABEL_RMDATA = "pgrmdata"
 
@@ -60,6 +60,7 @@ const LABEL_BACKREST_JOB = "pgo-backrest-job"
 const LABEL_BACKREST_RESTORE = "pgo-backrest-restore"
 const LABEL_CONTAINER_NAME = "containername"
 const LABEL_POD_NAME = "podname"
+const LABEL_BACKREST_REPO_SECRET = "backrest-repo-config"
 const LABEL_BACKREST_COMMAND = "backrest-command"
 const LABEL_BACKREST_RESTORE_FROM_CLUSTER = "backrest-restore-from-cluster"
 const LABEL_BACKREST_RESTORE_TO_PVC = "backrest-restore-to-pvc"
@@ -67,6 +68,7 @@ const LABEL_BACKREST_RESTORE_OPTS = "backrest-restore-opts"
 const LABEL_BACKREST_BACKUP_OPTS = "backrest-backup-opts"
 const LABEL_BACKREST_OPTS = "backrest-opts"
 const LABEL_BACKREST_PITR_TARGET = "backrest-pitr-target"
+const LABEL_BACKREST_STORAGE_TYPE = "backrest-storage-type"
 const LABEL_BADGER = "crunchy-pgbadger"
 const LABEL_BACKUP_TYPE_BASEBACKUP = "pgbasebackup"
 const LABEL_BACKUP_TYPE_BACKREST = "pgbackrest"
@@ -93,6 +95,12 @@ const LABEL_PGRESTORE_FROM_PVC = "pgrestore-from-pvc"
 const LABEL_PGRESTORE_OPTS = "pgrestore-opts"
 const LABEL_PGRESTORE_PITR_TARGET = "pgrestore-pitr-target"
 
+const LABEL_PGBASEBACKUP_RESTORE = "pgo-pgbasebackup-restore"
+const LABEL_PGBASEBACKUP_RESTORE_FROM_CLUSTER = "pgbasebackup-restore-from-cluster"
+const LABEL_PGBASEBACKUP_RESTORE_FROM_PVC = "pgbasebackup-restore-from-pvc"
+const LABEL_PGBASEBACKUP_RESTORE_TO_PVC = "pgbasebackup-restore-to-pvc"
+const LABEL_PGBASEBACKUP_RESTORE_BACKUP_PATH = "pgbasebackup-restore-backup-path"
+
 const LABEL_DATA_ROOT = "data-root"
 const LABEL_PVC_NAME = "pvc-name"
 const LABEL_VOLUME_NAME = "volume-name"
@@ -102,6 +110,7 @@ const LABEL_USERNAME = "username"
 const LABEL_PASSWORD = "password"
 
 const LABEL_PGPOOL = "crunchy-pgpool"
+const LABEL_PGPOOL_POD = "crunchy-pgpool-pod"
 const LABEL_PGPOOL_SECRET = "pgpool-secret"
 const LABEL_PGPOOL_TASK_ADD = "pgpool-add"
 const LABEL_PGPOOL_TASK_DELETE = "pgpool-delete"
@@ -136,3 +145,8 @@ const LABEL_TRUE = "true"
 const LABEL_FALSE = "false"
 
 const LABEL_NAMESPACE = "namespace"
+const LABEL_VENDOR = "vendor"
+
+const LABEL_PGO_DEFAULT_SC = "pgo-default-sc"
+
+const GLOBAL_CUSTOM_CONFIGMAP = "pgo-custom-pg-config"

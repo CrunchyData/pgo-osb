@@ -17,16 +17,14 @@ limitations under the License.
 
 import ()
 
-// ReloadResponse ...
-type ReloadResponse struct {
+// LsResponse ...
+type LsResponse struct {
 	Results []string
 	Status
 }
 
-// ReloadRequest ...
-type ReloadRequest struct {
+// LsRequest ...
+type LsRequest struct {
 	Namespace string
 	Args      []string
-	Selector  string
-	//ConfigMapName       string
 }
