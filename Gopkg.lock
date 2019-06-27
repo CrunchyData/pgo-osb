@@ -26,7 +26,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:5ff116f241c184098cef2c6b09649534dc7cf21ca6e155898b931eac19040320"
+  digest = "1:cb1e1b9b3291908003f819e6e788c37fded1078eb278919d42e022f1f5ec86bc"
   name = "github.com/crunchydata/postgres-operator"
   packages = [
     "apis/cr/v1",
@@ -37,8 +37,8 @@
     "util",
   ]
   pruneopts = "NUT"
-  revision = "7fb5f61381314e0f7886709a6ffb27c027571050"
-  version = "4.0.0"
+  revision = "f2ad92f8dccfa363801d5630b29b591371fb69e8"
+  version = "4.0.1"
 
 [[projects]]
   branch = "master"
@@ -632,7 +632,10 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/crunchydata/postgres-operator/apis/cr/v1",
     "github.com/crunchydata/postgres-operator/apiservermsgs",
+    "github.com/crunchydata/postgres-operator/config",
+    "github.com/crunchydata/postgres-operator/kubeapi",
     "github.com/crunchydata/postgres-operator/pgo/api",
     "github.com/crunchydata/postgres-operator/util",
     "github.com/pmorie/go-open-service-broker-client/v2",
