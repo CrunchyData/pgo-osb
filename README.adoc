@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v1.3.0, {docdate}
+Latest Release: v4.0.1, {docdate}
 
 == General
 
@@ -30,14 +30,20 @@ See the following:
 
 == Compatibility
 
- * pgo-osb 1.3.0 works with Postgres Operator 4.0.0
+Starting with *pgo-osb* version 4.0.0, the release schedule and version number for *pgo-osb* will be aligned with the release
+schedule and version number for the the 
+link:https://access.crunchydata.com/documentation/postgres-operator/latest[Crunchy PostgreSQL Operator].  Therefore, to ensure
+compatibility between *pgo-osb* and the PostreSQL Operator, please ensure the version number for *pgo-osb* matches the
+version number of the PostreSQL Operator deployed in your environment.  For instance, if you are using *pgo-osb* v4.0.1, please
+ensure the Crunchy PostreSQL Operator v4.0.1 is also deployed in your environment.
 
 == Prerequisites
 
 golang 1.9 or above is required to build this project.
 
 Running the *pgo-osb* service broker assumes you have successfully deployed
-the PostgreSQL Operator.  See https://github.com/CrunchyData/postgres-operator for documentation on deploying the PostgreSQL Operator.
+the PostgreSQL Operator.  See https://access.crunchydata.com/documentation/postgres-operator/latest for documentation on 
+deploying the PostgreSQL Operator.
 
 Please note that if *pgo-osb* is deployed to a different namespace than the PostgreSQL Operator, DNS must be utilized when specifying 
 the URL for the PostgreSQL Operator API server.  This is done using environment variable `PGO_APISERVER_URL` in the *pgo-osb* 
@@ -94,7 +100,7 @@ export OSB_NAMESPACE=demo
 export OSB_CMD=kubectl
 export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export OSB_BASEOS=centos7
-export OSB_VERSION=1.3.0
+export OSB_VERSION=4.0.1
 export OSB_IMAGE_TAG=$OSB_BASEOS-$OSB_VERSION
 export OSB_IMAGE_PREFIX=crunchydata
 ....
@@ -122,9 +128,6 @@ https://svc-cat.io/docs/install/
 Instructions on that link are provided to also install the
 very useful *svcat* utility for inspecting and working
 with the service catalog.
-
-WARNING:  we have found issues using Helm 2.10 when installing Service Catalog, we tend
-to use Helm 2.9.1.
 
 == Deploy
 
@@ -180,8 +183,10 @@ kubectl get servicebinding
 
 You can view the binding and the generated Postgres credentials
 using this command:
+[source]
 ....
-$ svcat describe binding testinstance-binding
+# show the binding without secrets
+$ svcat describe binding testinstance-binding -n $OSB_NAMESPACE
   Name:        testinstance-binding
   Namespace:   demo
   Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC
@@ -194,7 +199,9 @@ Parameters:
 Secret Data:
   secrets    111 bytes
   services   151 bytes
-[osb@kube11 pgo-osb]$ svcat describe binding testinstance-binding --show-secrets
+
+# show the binding with secrets
+$ svcat describe binding testinstance-binding --show-secrets -n $OSB_NAMESPACE
   Name:        testinstance-binding
   Namespace:   demo
   Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC
@@ -250,7 +257,7 @@ Broker:        pgo-osb
 
 === View Instances in a Namespace
 ....
-$ svcat get instances -n demo
+$ svcat get instances -n $OSB_NAMESPACE
 NAME      NAMESPACE        CLASS         PLAN     STATUS
 +------------+-----------+-----------------+---------+--------+
   testinstance   demo        pgo-osb-service   default   Ready
@@ -262,11 +269,12 @@ NAME      NAMESPACE        CLASS         PLAN     STATUS
 
 You can remove the bindings and instances using these commands:
 ....
-$ svcat unbind testinstance
+$ svcat unbind testinstance -n $OSB_NAMESPACE
 deleted testinstance-binding
-$ svcat unbind testinstance2
+$ svcat unbind testinstance2 -n $OSB_NAMESPACE
 deleted testinstance2-binding
-$ svcat deprovision testinstance
+$ svcat deprovision testinstance -n $OSB_NAMESPACE
 deleted testinstance
-$ svcat deprovision testinstance2
+$ svcat deprovision testinstance2 -n $OSB_NAMESPACE
+deleted testinstance2
 ....
