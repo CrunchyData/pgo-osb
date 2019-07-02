@@ -15,10 +15,12 @@ main:
 
 image: main
 	cp $(GOBIN)/pgo-osb .
-	docker build -t pgo-osb -f $(OSB_BASEOS)/Dockerfile.pgo-osb.$(OSB_BASEOS) .
-	docker tag pgo-osb $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)
+	sudo --preserve-env buildah bud --squash -f $(OSB_ROOT)/$(OSB_BASEOS)/Dockerfile.pgo-osb.$(OSB_BASEOS) -t $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) $(OSB_ROOT)
+	sudo --preserve-env buildah push $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) docker-daemon:$(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)
+
 push:
 	docker push $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)
+
 
 deploy:
 	cd deploy && ./deploy.sh
