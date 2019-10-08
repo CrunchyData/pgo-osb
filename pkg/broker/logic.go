@@ -16,15 +16,14 @@ limitations under the License.
 */
 
 import (
+	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"sync"
 
 	"github.com/crunchydata/pgo-osb/pgocmd"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	"github.com/pmorie/osb-broker-lib/pkg/broker"
-	api "k8s.io/api/core/v1"
 )
 
 // NewBusinessLogic is a hook that is called with the Options the program is run
@@ -32,20 +31,42 @@ import (
 // BusinessLogic the parameters passed in.
 func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 	log.Println("NewBusinessLogic called")
-
-	log.Printf("Options %v\n", o)
+	log.Printf("Options %#v\n", o)
 
 	// For example, if your BusinessLogic requires a parameter from the command
 	// line, you would unpack it from the Options and set it on the
 	// BusinessLogic here.
-	return &BusinessLogic{
+	logic := &BusinessLogic{
 		async:                 o.Async,
 		PGO_OSB_GUID:          o.PGO_OSB_GUID,
 		PGO_APISERVER_URL:     o.PGO_APISERVER_URL,
 		PGO_APISERVER_VERSION: o.PGO_APISERVER_VERSION,
 		PGO_USERNAME:          o.PGO_USERNAME,
 		PGO_PASSWORD:          o.PGO_PASSWORD,
-	}, nil
+	}
+
+	if o.Simulated {
+		// NoOp for now
+	} else {
+		log.Println("Establishing remote...")
+		log.Println("  PGO_APISERVER_URL=" + logic.PGO_APISERVER_URL)
+		log.Println("  PGO_APISERVER_VERSION=" + logic.PGO_APISERVER_VERSION)
+		log.Println("  PGO_USERNAME=" + logic.PGO_USERNAME)
+		log.Println("  PGO_PASSWORD=" + logic.PGO_PASSWORD)
+
+		r, err := pgocmd.NewPGORemote(
+			logic.PGO_APISERVER_URL,
+			logic.PGO_USERNAME,
+			logic.PGO_PASSWORD,
+			logic.PGO_APISERVER_VERSION)
+		if err != nil {
+			log.Printf("error establishing PGORemote: %s", err)
+			return nil, err
+		}
+		logic.Remote = r
+	}
+
+	return logic, nil
 }
 
 // BusinessLogic provides an implementation of the broker.BusinessLogic
@@ -55,12 +76,13 @@ type BusinessLogic struct {
 	async bool
 	// Synchronize go routines.
 	sync.RWMutex
-	// Add fields here! These fields are provided purely as an example
+
 	PGO_OSB_GUID          string
 	PGO_APISERVER_URL     string
 	PGO_APISERVER_VERSION string
 	PGO_USERNAME          string
 	PGO_PASSWORD          string
+	Remote                pgocmd.Remote
 }
 
 var _ broker.Interface = &BusinessLogic{}
@@ -77,8 +99,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 	osbResponse := &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name: "pgo-osb-service",
-				//ID:            "4f6e6cf6-ffdd-425f-a2c7-3c9258ad246c",
+				Name:          "pgo-osb-service",
 				ID:            b.PGO_OSB_GUID,
 				Description:   "The pgo osb!",
 				Bindable:      true,
@@ -127,8 +148,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 }
 
 func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.RequestContext) (*broker.ProvisionResponse, error) {
-
-	log.Printf("Provision called with params %s\n", request.Parameters)
+	log.Printf("Provision called with params %#v\n", request.Parameters)
 	log.Printf("Provision called with InstanceID %s\n", request.InstanceID)
 	log.Printf("Provision called with ServiceID %s\n", request.ServiceID)
 	log.Printf("Provision called with PlanID %s\n", request.PlanID)
@@ -144,42 +164,34 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 
 	// Since handling request.Parameters is being delegated to the
 	// encapsulating type, direct access beyond here should raise suspicion
-	reqParams := NewProvReqParams(request.Parameters)
+	rp := NewProvReqParams(request.Parameters)
 
-	log.Println("provision PGO_USERNAME=" + b.PGO_USERNAME)
-	log.Println("provision PGO_PASSWORD=" + b.PGO_PASSWORD)
-	log.Println("provision PGO_CLUSTERNAME=" + reqParams.ClusterName)
-	log.Println("provision PGO_NAMESPACE=" + reqParams.Namespace)
+	log.Println("provision PGO_CLUSTERNAME=" + rp.ClusterName)
+	log.Println("provision PGO_NAMESPACE=" + rp.Namespace)
 
-	log.Println("provision PGO_APISERVER_URL=" + b.PGO_APISERVER_URL)
-	log.Println("provision PGO_APISERVER_VERSION=" + b.PGO_APISERVER_VERSION)
-
-	pgocmd.CreateCluster(b.PGO_APISERVER_URL,
-		b.PGO_USERNAME,
-		b.PGO_PASSWORD,
-		reqParams.ClusterName,
-		b.PGO_APISERVER_VERSION,
-		request.InstanceID,
-		reqParams.Namespace)
+	err := b.Remote.CreateCluster(request.InstanceID, rp.ClusterName, rp.Namespace)
+	if err != nil {
+		log.Printf("error during Provision: %s", err)
+		return nil, err
+	}
 	return &response, nil
 }
 
 func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.RequestContext) (*broker.DeprovisionResponse, error) {
-
-	log.Printf("Deprovision called request=%v", request)
-	log.Printf("Deprovision called broker request context=%v", c)
+	log.Printf("Deprovision called request=%#v", request)
+	log.Printf("Deprovision called broker request context=%#v", c)
 
 	b.Lock()
 	defer b.Unlock()
 
 	response := broker.DeprovisionResponse{}
 
-	log.Printf("Deprovision instanceID=%d\n", request.InstanceID)
-	log.Printf("Deprovision request=%v\n", request)
-	log.Printf("Deprovision PGO_APISERVER_URL=" + b.PGO_APISERVER_URL)
-	log.Printf("Deprovision PGO_APISERVER_VERSION=" + b.PGO_APISERVER_VERSION)
-
-	pgocmd.DeleteCluster(b.PGO_APISERVER_URL, b.PGO_USERNAME, b.PGO_PASSWORD, b.PGO_APISERVER_VERSION, request.InstanceID)
+	log.Printf("Deprovision instanceID=%s\n", request.InstanceID)
+	err := b.Remote.DeleteCluster(request.InstanceID)
+	if err != nil {
+		log.Printf("error deleting cluster: %s\n", err)
+		return nil, err
+	}
 
 	if request.AcceptsIncomplete {
 		response.Async = b.async
@@ -189,60 +201,57 @@ func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.R
 }
 
 func (b *BusinessLogic) LastOperation(request *osb.LastOperationRequest, c *broker.RequestContext) (*broker.LastOperationResponse, error) {
-	log.Println("LastOperator called")
+	log.Println("LastOperation called")
 	return nil, nil
 }
 
 func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext) (*broker.BindResponse, error) {
+	log.Printf("Bind called req=%#v\n", request)
+	log.Printf("Bind called request instanceID=%s\n", request.InstanceID)
+	log.Printf("Bind called broker ctx=%#v\n", c)
 
-	log.Printf("Bind called req=%v\n", request)
-	log.Printf("Bind called request instanceID=%d\n", request.InstanceID)
-	log.Printf("Bind called broker ctx=%v\n", c)
-
-	credentials, services, err := pgocmd.GetClusterCredentials(b.PGO_APISERVER_URL, b.PGO_USERNAME, b.PGO_PASSWORD, b.PGO_APISERVER_VERSION, request.InstanceID)
+	clusterDetail, err := b.Remote.ClusterDetail(request.InstanceID)
 	if err != nil {
-		return nil, osb.HTTPStatusCodeError{
-			StatusCode: http.StatusNotFound,
-		}
+		log.Printf("error getting cluster info: %s\n", err)
+		return nil, err
+	}
+
+	appGUID := ""
+	if request.AppGUID != nil {
+		appGUID = *request.AppGUID
+	}
+
+	bindCreds, err := b.Remote.BindingUser(request.InstanceID, appGUID, request.BindingID)
+	if err != nil {
+		log.Printf("error getting binding info: %s\n", err)
+		return nil, err
 	}
 
 	if os.Getenv("CRUNCHY_DEBUG") == "true" {
-		log.Printf("credentials map is %v\n", credentials)
+		log.Printf("credentials: %#v\n", bindCreds)
 	}
 
-	//see code from kibosh example  for the credentials layout
-	//they require
-	secretsMap := []map[string]interface{}{}
-
-	credential := map[string]interface{}{
-		"name": "somesecretname",
-		"data": credentials,
-	}
-	secretsMap = append(secretsMap, credential)
-
-	servicesMap := []map[string]interface{}{}
-	for _, service := range services {
-		spec := api.ServiceSpec{}
-		spec.Ports = make([]api.ServicePort, 1)
-		spec.Ports[0].Name = "postgres"
-		spec.Ports[0].Port = 5432
-		spec.ClusterIP = service.ClusterIP
-		spec.LoadBalancerIP = service.ExternalIP
-		spec.ExternalIPs = make([]string, 1)
-		spec.ExternalIPs[0] = service.ExternalIP
-
-		credentialService := map[string]interface{}{
-			"name":   service.Name,
-			"spec":   spec,
-			"status": "",
-		}
-		servicesMap = append(servicesMap, credentialService)
+	port := 5432
+	dbName := "userdb"
+	host := clusterDetail.ExternalIP
+	if host == "" {
+		host = clusterDetail.ClusterIP
 	}
 	response := broker.BindResponse{
 		BindResponse: osb.BindResponse{
 			Credentials: map[string]interface{}{
-				"secrets":  secretsMap,
-				"services": servicesMap,
+				"username":      bindCreds.Username,
+				"password":      bindCreds.Password,
+				"db_port":       port,
+				"db_name":       dbName,
+				"db_host":       host,
+				"internal_host": clusterDetail.ClusterIP,
+				"uri": fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
+					bindCreds.Username,
+					bindCreds.Password,
+					host,
+					port,
+					dbName),
 			},
 		},
 	}
@@ -250,18 +259,17 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}
+	log.Printf("Bind Response: %#v\n", response)
 
 	return &response, nil
 }
 
 func (b *BusinessLogic) Unbind(request *osb.UnbindRequest, c *broker.RequestContext) (*broker.UnbindResponse, error) {
-
 	log.Println("Unbind called")
 	return &broker.UnbindResponse{}, nil
 }
 
 func (b *BusinessLogic) Update(request *osb.UpdateInstanceRequest, c *broker.RequestContext) (*broker.UpdateInstanceResponse, error) {
-
 	log.Println("Update called")
 	response := broker.UpdateInstanceResponse{}
 	if request.AcceptsIncomplete {

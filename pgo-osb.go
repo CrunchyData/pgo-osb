@@ -26,7 +26,6 @@ import (
 	"syscall"
 
 	"github.com/crunchydata/pgo-osb/pgocmd"
-
 	"github.com/crunchydata/pgo-osb/pkg/broker"
 	"github.com/crunchydata/postgres-operator/config"
 	"github.com/crunchydata/postgres-operator/util"
@@ -44,16 +43,14 @@ import (
 var options struct {
 	broker.Options
 
-	Port                  int
-	Insecure              bool
-	PGO_APISERVER_URL     string
-	PGO_APISERVER_VERSION string
-	TLSCert               string
-	TLSKey                string
-	TLSCertFile           string
-	TLSKeyFile            string
-	AuthenticateK8SToken  bool
-	KubeConfig            string
+	Port                 int
+	Insecure             bool
+	TLSCert              string
+	TLSKey               string
+	TLSCertFile          string
+	TLSKeyFile           string
+	AuthenticateK8SToken bool
+	KubeConfig           string
 }
 
 func main() {
