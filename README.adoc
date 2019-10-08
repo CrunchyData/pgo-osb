@@ -1,6 +1,6 @@
 image::crunchy_logo.png[Crunchy Data Logo]
 
-Latest Release: v4.0.1, {docdate}
+Latest Release: v4.1.0, {docdate}
 
 == General
 
@@ -34,8 +34,8 @@ Starting with *pgo-osb* version 4.0.0, the release schedule and version number f
 schedule and version number for the the 
 link:https://access.crunchydata.com/documentation/postgres-operator/latest[Crunchy PostgreSQL Operator].  Therefore, to ensure
 compatibility between *pgo-osb* and the PostreSQL Operator, please ensure the version number for *pgo-osb* matches the
-version number of the PostreSQL Operator deployed in your environment.  For instance, if you are using *pgo-osb* v4.0.1, please
-ensure the Crunchy PostreSQL Operator v4.0.1 is also deployed in your environment.
+version number of the PostreSQL Operator deployed in your environment.  For instance, if you are using *pgo-osb* v4.1.0, please
+ensure the Crunchy PostreSQL Operator v4.1.0 is also deployed in your environment.
 
 == Prerequisites
 
@@ -100,7 +100,7 @@ export OSB_NAMESPACE=demo
 export OSB_CMD=kubectl
 export OSB_ROOT=$GOPATH/src/github.com/crunchydata/pgo-osb
 export OSB_BASEOS=centos7
-export OSB_VERSION=4.0.1
+export OSB_VERSION=4.1.0
 export OSB_IMAGE_TAG=$OSB_BASEOS-$OSB_VERSION
 export OSB_IMAGE_PREFIX=crunchydata
 ....

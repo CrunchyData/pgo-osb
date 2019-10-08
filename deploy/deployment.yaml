@@ -30,15 +30,15 @@ spec:
         - -v
         - "99"
         - --PGO_USERNAME
-        - "username"
+        - "pgoadmin"
         - --PGO_PASSWORD
-        - "password"
+        - "examplepassword"
         - --PGO_OSB_GUID
         - "4be12541-2945-4101-8a33-79ac0ad58750"
         - --PGO_APISERVER_URL
         - "https://postgres-operator:8443"
         - --PGO_APISERVER_VERSION
-        - "4.0.1"
+        - "4.1.0"
         - --logtostderr
         - --tls-cert-file
         - "/var/run/pgo-osb/server.crt"

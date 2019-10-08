@@ -317,7 +317,10 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *osblib.RequestContext)
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}
-	log.Printf("Bind Response: %#v\n", response)
+
+	if os.Getenv("CRUNCHY_DEBUG") == "true" {
+		log.Printf("Bind Response: %#v\n", response)
+	}
 
 	return &response, nil
 }

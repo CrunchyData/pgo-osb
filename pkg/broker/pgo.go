@@ -230,36 +230,43 @@ func (po *PGOperator) CreateBinding(instanceID, bindID, appID string) (BasicCred
 	newUser := fmt.Sprintf("user%s", strings.ToLower(nu))
 
 	cuReq := msgs.CreateUserRequest{
-		Name:           newUser,
+		Username:       newUser,
 		Namespace:      ns,
 		Selector:       po.instLabel(instanceID),
 		ManagedUser:    true,
 		ClientVersion:  po.clientVer,
 		PasswordLength: 16,
 	}
-	resp, err := api.CreateUser(hc, &po.pgoCreds, &cuReq)
+	cuResp, err := api.CreateUser(hc, &po.pgoCreds, &cuReq)
 	if err != nil {
 		log.Printf("Unable to create user %s: %s\n", newUser, err)
 		return BasicCred{}, err
 	}
-	if resp.Code != msgs.Ok {
-		log.Printf("Unable to create user %s: %s\n", newUser, resp.Msg)
+	if cuResp.Code != msgs.Ok {
+		log.Printf("Unable to create user %s: %s\n", newUser, cuResp.Msg)
 	}
 
-	clusterName := "all"
-	expired := ""
-	response, err := api.ShowUser(hc, clusterName, po.instLabel(instanceID), expired, &po.pgoCreds, ns)
-
-	if response.Status.Code != msgs.Ok {
-		m := response.Status.Msg
+	suReq := &msgs.ShowUserRequest{
+		AllFlag:       true,
+		ClientVersion: po.clientVer,
+		Namespace:     ns,
+		Selector:      po.instLabel(instanceID),
+	}
+	suResp, err := api.ShowUser(hc, &po.pgoCreds, suReq)
+	if err != nil {
+		log.Printf("error getting user details: %s\n", err)
+		return BasicCred{}, err
+	}
+	if suResp.Status.Code != msgs.Ok {
+		m := suResp.Status.Msg
 		log.Println(m)
 		return BasicCred{}, errors.New("error showing user: " + m)
 	}
-	if len(response.Results) == 0 {
+	if len(suResp.Results) == 0 {
 		log.Println("no users found")
 		return BasicCred{}, errors.New("no users found for instance " + instanceID)
 	}
-	users := response.Results[0]
+	users := suResp.Results[0]
 	log.Println("cluster secrets are:")
 	credentials := make(map[string]interface{})
 	for _, s := range users.Secrets {
@@ -391,7 +398,14 @@ func (po *PGOperator) DeleteBinding(instanceID, bindID string) error {
 	}
 	user := fmt.Sprintf("user%s", strings.ToLower(u))
 
-	resp, err := api.DeleteUser(hc, user, po.instLabel(instanceID), &po.pgoCreds, ns)
+	duReq := msgs.DeleteUserRequest{
+		AllFlag:       true,
+		ClientVersion: po.clientVer,
+		Namespace:     ns,
+		Selector:      po.instLabel(instanceID),
+		Username:      user,
+	}
+	resp, err := api.DeleteUser(hc, &po.pgoCreds, &duReq)
 	if err != nil {
 		return err
 	}
@@ -422,10 +436,17 @@ func (po *PGOperator) DeleteCluster(instanceID string) error {
 	}
 
 	// Ensure no bound users exist
-	clusterName := "all"
-	expired := ""
-	suResp, err := api.ShowUser(hc, clusterName, po.instLabel(instanceID), expired, &po.pgoCreds, ns)
-
+	suReq := &msgs.ShowUserRequest{
+		AllFlag:       true,
+		ClientVersion: po.clientVer,
+		Namespace:     ns,
+		Selector:      po.instLabel(instanceID),
+	}
+	suResp, err := api.ShowUser(hc, &po.pgoCreds, suReq)
+	if err != nil {
+		log.Printf("error getting user details: %s\n", err)
+		return err
+	}
 	if suResp.Status.Code != msgs.Ok {
 		m := suResp.Status.Msg
 		log.Println(m)
