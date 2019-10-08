@@ -39,8 +39,8 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 	// line, you would unpack it from the Options and set it on the
 	// BusinessLogic here.
 	return &BusinessLogic{
-		async:                o.Async,
-		PGO_OSB_GUID:         o.PGO_OSB_GUID,
+		async:                 o.Async,
+		PGO_OSB_GUID:          o.PGO_OSB_GUID,
 		PGO_APISERVER_URL:     o.PGO_APISERVER_URL,
 		PGO_APISERVER_VERSION: o.PGO_APISERVER_VERSION,
 		PGO_USERNAME:          o.PGO_USERNAME,
@@ -56,7 +56,7 @@ type BusinessLogic struct {
 	// Synchronize go routines.
 	sync.RWMutex
 	// Add fields here! These fields are provided purely as an example
-	PGO_OSB_GUID         string
+	PGO_OSB_GUID          string
 	PGO_APISERVER_URL     string
 	PGO_APISERVER_VERSION string
 	PGO_USERNAME          string
