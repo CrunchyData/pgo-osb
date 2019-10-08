@@ -21,10 +21,13 @@ import ()
 const RootSecretSuffix = "-postgres-secret"
 
 // UserSecretSuffix ...
-const UserSecretSuffix = "-testuser-secret"
+const UserSecretSuffix = "-secret"
 
 // PrimarySecretSuffix ...
 const PrimarySecretSuffix = "-primaryuser-secret"
+
+// CollectSecretSuffix ...
+const CollectSecretSuffix = "-collect-secret"
 
 // StorageExisting ...
 const StorageExisting = "existing"
@@ -58,7 +61,13 @@ type PgContainerResources struct {
 	LimitsCPU      string `json:"limitscpu"`
 }
 
+// CompletedStatus -
 const CompletedStatus = "completed"
+
+// InProgressStatus -
+const InProgressStatus = "in progress"
+
+// SubmittedStatus -
 const SubmittedStatus = "submitted"
 
 // JobCompletedStatus ....

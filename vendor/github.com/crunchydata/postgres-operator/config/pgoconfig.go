@@ -29,12 +29,37 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 )
 
 const CustomConfigMapName = "pgo-config"
 const DefaultConfigsPath = "/default-pgo-config/"
 const CustomConfigsPath = "/pgo-config/"
+
+var PgoTargetRoleBindingTemplate *template.Template
+
+const PGOTargetRoleBindingPath = "pgo-target-role-binding.json"
+
+var PgoBackrestServiceAccountTemplate *template.Template
+
+const PGOBackrestServiceAccountPath = "pgo-backrest-sa.json"
+
+var PgoTargetServiceAccountTemplate *template.Template
+
+const PGOTargetServiceAccountPath = "pgo-target-sa.json"
+
+var PgoBackrestRoleTemplate *template.Template
+
+const PGOBackrestRolePath = "pgo-backrest-role.json"
+
+var PgoBackrestRoleBindingTemplate *template.Template
+
+const PGOBackrestRoleBindingPath = "pgo-backrest-role-binding.json"
+
+var PgoTargetRoleTemplate *template.Template
+
+const PGOTargetRolePath = "pgo-target-role.json"
 
 var BenchmarkJobTemplate *template.Template
 
@@ -179,7 +204,10 @@ type ClusterStruct struct {
 	Metrics                 bool   `yaml:"Metrics"`
 	Badger                  bool   `yaml:"Badger"`
 	Port                    string `yaml:"Port"`
+	PGBadgerPort            string `yaml:"PGBadgerPort"`
+	ExporterPort            string `yaml:"ExporterPort"`
 	User                    string `yaml:"User"`
+	ArchiveTimeout          string `yaml:"ArchiveTimeout"`
 	Database                string `yaml:"Database"`
 	PasswordAgeDays         string `yaml:"PasswordAgeDays"`
 	PasswordLength          string `yaml:"PasswordLength"`
@@ -253,14 +281,42 @@ var log_statement_values = []string{"ddl", "none", "mod", "all"}
 const DEFAULT_LOG_STATEMENT = "none"
 const DEFAULT_LOG_MIN_DURATION_STATEMENT = "60000"
 const DEFAULT_BACKREST_PORT = 2022
+const DEFAULT_PGBADGER_PORT = "10000"
+const DEFAULT_EXPORTER_PORT = "9187"
+const DEFAULT_POSTGRES_PORT = "5432"
 const DEFAULT_BACKREST_SSH_KEY_BITS = 2048
 
 func (c *PgoConfig) Validate() error {
 	var err error
+	errPrefix := "Error in pgoconfig: check pgo.yaml: "
 
 	if c.Cluster.BackrestPort == 0 {
 		c.Cluster.BackrestPort = DEFAULT_BACKREST_PORT
 		log.Infof("setting BackrestPort to default %d", c.Cluster.BackrestPort)
+	}
+	if c.Cluster.PGBadgerPort == "" {
+		c.Cluster.PGBadgerPort = DEFAULT_PGBADGER_PORT
+		log.Infof("setting PGBadgerPort to default %s", c.Cluster.PGBadgerPort)
+	} else {
+		if _, err := strconv.Atoi(c.Cluster.PGBadgerPort); err != nil {
+			return errors.New(errPrefix + "Invalid PGBadgerPort: " + err.Error())
+		}
+	}
+	if c.Cluster.ExporterPort == "" {
+		c.Cluster.ExporterPort = DEFAULT_EXPORTER_PORT
+		log.Infof("setting ExporterPort to default %s", c.Cluster.ExporterPort)
+	} else {
+		if _, err := strconv.Atoi(c.Cluster.ExporterPort); err != nil {
+			return errors.New(errPrefix + "Invalid ExporterPort: " + err.Error())
+		}
+	}
+	if c.Cluster.Port == "" {
+		c.Cluster.Port = DEFAULT_POSTGRES_PORT
+		log.Infof("setting Postgres Port to default %s", c.Cluster.Port)
+	} else {
+		if _, err := strconv.Atoi(c.Cluster.Port); err != nil {
+			return errors.New(errPrefix + "Invalid Port: " + err.Error())
+		}
 	}
 
 	if c.Cluster.LogStatement != "" {
@@ -271,7 +327,7 @@ func (c *PgoConfig) Validate() error {
 			}
 		}
 		if !found {
-			return errors.New("Cluster.LogStatement does not container a valid value for log_statement")
+			return errors.New(errPrefix + "Cluster.LogStatement does not container a valid value for log_statement")
 		}
 	} else {
 		log.Info("using default log_statement value since it was not specified in pgo.yaml")
@@ -281,7 +337,7 @@ func (c *PgoConfig) Validate() error {
 	if c.Cluster.LogMinDurationStatement != "" {
 		_, err = strconv.Atoi(c.Cluster.LogMinDurationStatement)
 		if err != nil {
-			return errors.New("Cluster.LogMinDurationStatement invalid int value found")
+			return errors.New(errPrefix + "Cluster.LogMinDurationStatement invalid int value found")
 		}
 	} else {
 		log.Info("using default log_min_duration_statement value since it was not specified in pgo.yaml")
@@ -291,25 +347,25 @@ func (c *PgoConfig) Validate() error {
 	if c.Cluster.PrimaryNodeLabel != "" {
 		parts := strings.Split(c.Cluster.PrimaryNodeLabel, "=")
 		if len(parts) != 2 {
-			return errors.New("Cluster.PrimaryNodeLabel does not follow key=value format")
+			return errors.New(errPrefix + "Cluster.PrimaryNodeLabel does not follow key=value format")
 		}
 	}
 
 	if c.Cluster.ReplicaNodeLabel != "" {
 		parts := strings.Split(c.Cluster.ReplicaNodeLabel, "=")
 		if len(parts) != 2 {
-			return errors.New("Cluster.ReplicaNodeLabel does not follow key=value format")
+			return errors.New(errPrefix + "Cluster.ReplicaNodeLabel does not follow key=value format")
 		}
 	}
 
 	log.Infof("pgo.yaml Cluster.Backrest is %v", c.Cluster.Backrest)
 	_, ok := c.Storage[c.PrimaryStorage]
 	if !ok {
-		return errors.New("PrimaryStorage setting required")
+		return errors.New(errPrefix + "PrimaryStorage setting required")
 	}
 	_, ok = c.Storage[c.BackupStorage]
 	if !ok {
-		return errors.New("BackupStorage setting required")
+		return errors.New(errPrefix + "BackupStorage setting required")
 	}
 	_, ok = c.Storage[c.BackrestStorage]
 	if !ok {
@@ -319,7 +375,7 @@ func (c *PgoConfig) Validate() error {
 
 	_, ok = c.Storage[c.ReplicaStorage]
 	if !ok {
-		return errors.New("ReplicaStorage setting required")
+		return errors.New(errPrefix + "ReplicaStorage setting required")
 	}
 	for k, _ := range c.Storage {
 		_, err = c.GetStorageSpec(k)
@@ -328,10 +384,10 @@ func (c *PgoConfig) Validate() error {
 		}
 	}
 	if c.Pgo.PGOImagePrefix == "" {
-		return errors.New("Pgo.PGOImagePrefix is required")
+		return errors.New(errPrefix + "Pgo.PGOImagePrefix is required")
 	}
 	if c.Pgo.PGOImageTag == "" {
-		return errors.New("Pgo.PGOImageTag is required")
+		return errors.New(errPrefix + "Pgo.PGOImageTag is required")
 	}
 	if c.Pgo.AutofailSleepSeconds == "" {
 		log.Warn("Pgo.AutofailSleepSeconds not set, using default ")
@@ -339,55 +395,64 @@ func (c *PgoConfig) Validate() error {
 	}
 	c.Pgo.AutofailSleepSecondsValue, err = strconv.Atoi(c.Pgo.AutofailSleepSeconds)
 	if err != nil {
-		return errors.New("Pgo.AutofailSleepSeconds invalid int value found")
+		return errors.New(errPrefix + "Pgo.AutofailSleepSeconds invalid int value found")
 	}
 
 	if c.DefaultContainerResources != "" {
 		_, ok = c.ContainerResources[c.DefaultContainerResources]
 		if !ok {
-			return errors.New("DefaultContainerResources setting invalid")
+			return errors.New(errPrefix + "DefaultContainerResources setting invalid")
 		}
 	}
 	if c.DefaultLspvcResources != "" {
 		_, ok = c.ContainerResources[c.DefaultLspvcResources]
 		if !ok {
-			return errors.New("DefaultLspvcResources setting invalid")
+			return errors.New(errPrefix + "DefaultLspvcResources setting invalid")
 		}
 	}
 	if c.DefaultLoadResources != "" {
 		_, ok = c.ContainerResources[c.DefaultLoadResources]
 		if !ok {
-			return errors.New("DefaultLoadResources setting invalid")
+			return errors.New(errPrefix + "DefaultLoadResources setting invalid")
 		}
 	}
 	if c.DefaultRmdataResources != "" {
 		_, ok = c.ContainerResources[c.DefaultRmdataResources]
 		if !ok {
-			return errors.New("DefaultRmdataResources setting invalid")
+			return errors.New(errPrefix + "DefaultRmdataResources setting invalid")
 		}
 	}
 	if c.DefaultBackupResources != "" {
 		_, ok = c.ContainerResources[c.DefaultBackupResources]
 		if !ok {
-			return errors.New("DefaultBackupResources setting invalid")
+			return errors.New(errPrefix + "DefaultBackupResources setting invalid")
 		}
 	}
 	if c.DefaultBadgerResources != "" {
 		_, ok = c.ContainerResources[c.DefaultBadgerResources]
 		if !ok {
-			return errors.New("DefaultBadgerResources setting invalid")
+			return errors.New(errPrefix + "DefaultBadgerResources setting invalid")
 		}
 	}
 	if c.DefaultPgpoolResources != "" {
 		_, ok = c.ContainerResources[c.DefaultPgpoolResources]
 		if !ok {
-			return errors.New("DefaultPgpoolResources setting invalid")
+			return errors.New(errPrefix + "DefaultPgpoolResources setting invalid")
 		}
 	}
 	if c.DefaultPgbouncerResources != "" {
 		_, ok = c.ContainerResources[c.DefaultPgbouncerResources]
 		if !ok {
-			return errors.New("DefaultPgbouncerResources setting invalid")
+			return errors.New(errPrefix + "DefaultPgbouncerResources setting invalid")
+		}
+	}
+
+	if c.Cluster.ArchiveTimeout == "" {
+		log.Info("Pgo.Cluster.ArchiveTimeout not set, using '60'")
+	} else {
+		_, err := strconv.Atoi(c.Cluster.ArchiveTimeout)
+		if err != nil {
+			return errors.New(errPrefix + "Cluster.ArchiveTimeout invalid int value found")
 		}
 	}
 
@@ -398,16 +463,32 @@ func (c *PgoConfig) Validate() error {
 		if c.Cluster.ServiceType != DEFAULT_SERVICE_TYPE &&
 			c.Cluster.ServiceType != LOAD_BALANCER_SERVICE_TYPE &&
 			c.Cluster.ServiceType != NODEPORT_SERVICE_TYPE {
-			return errors.New("Cluster.ServiceType is required to be either ClusterIP, NodePort, or LoadBalancer")
+			return errors.New(errPrefix + "Cluster.ServiceType is required to be either ClusterIP, NodePort, or LoadBalancer")
 		}
 	}
 
 	if c.Cluster.CCPImagePrefix == "" {
-		return errors.New("Cluster.CCPImagePrefix is required")
+		return errors.New(errPrefix + "Cluster.CCPImagePrefix is required")
 	}
 
 	if c.Cluster.CCPImageTag == "" {
-		return errors.New("Cluster.CCPImageTag is required")
+		return errors.New(errPrefix + "Cluster.CCPImageTag is required")
+	}
+
+	if c.Cluster.User == "" {
+		return errors.New(errPrefix + "Cluster.User is required")
+	} else {
+		// validates that username can be used as the kubernetes secret name
+		// Must consist of lower case alphanumeric characters,
+		// '-' or '.', and must start and end with an alphanumeric character
+		errs := validation.IsDNS1123Subdomain(c.Cluster.User)
+		if len(errs) > 0 {
+			var msg string
+			for i := range errs {
+				msg = msg + errs[i]
+			}
+			return errors.New(errPrefix + msg)
+		}
 	}
 	return err
 }
@@ -530,6 +611,31 @@ func (c *PgoConfig) GetConfig(clientset *kubernetes.Clientset, namespace string)
 	c.CheckEnv()
 
 	//load up all the templates
+	PgoBackrestServiceAccountTemplate, err = c.LoadTemplate(cMap, rootPath, PGOBackrestServiceAccountPath)
+	if err != nil {
+		return err
+	}
+	PgoTargetServiceAccountTemplate, err = c.LoadTemplate(cMap, rootPath, PGOTargetServiceAccountPath)
+	if err != nil {
+		return err
+	}
+	PgoTargetRoleBindingTemplate, err = c.LoadTemplate(cMap, rootPath, PGOTargetRoleBindingPath)
+	if err != nil {
+		return err
+	}
+	PgoBackrestRoleTemplate, err = c.LoadTemplate(cMap, rootPath, PGOBackrestRolePath)
+	if err != nil {
+		return err
+	}
+	PgoBackrestRoleBindingTemplate, err = c.LoadTemplate(cMap, rootPath, PGOBackrestRoleBindingPath)
+	if err != nil {
+		return err
+	}
+	PgoTargetRoleTemplate, err = c.LoadTemplate(cMap, rootPath, PGOTargetRolePath)
+	if err != nil {
+		return err
+	}
+
 	BenchmarkJobTemplate, err = c.LoadTemplate(cMap, rootPath, benchmarkJobPath)
 	if err != nil {
 		return err

@@ -19,23 +19,35 @@ import (
 	crv1 "github.com/crunchydata/postgres-operator/apis/cr/v1"
 )
 
-// UserRequest ...
-type UserRequest struct {
-	Args                  []string
+// UpdateUserRequest ...
+type UpdateUserRequest struct {
+	Clusters              []string
 	Selector              string
+	AllFlag               bool
+	ExpireUser            bool
 	Namespace             string
 	PasswordAgeDays       int
-	ChangePasswordForUser string
+	PasswordAgeDaysUpdate bool
+	Username              string
 	Password              string
 	DeleteUser            string
 	ValidDays             string
 	UserDBAccess          string
 	AddUser               string
 	Expired               string
-	UpdatePasswords       bool
 	ManagedUser           bool
 	ClientVersion         string
 	PasswordLength        int
+}
+
+// DeleteUserRequest ...
+type DeleteUserRequest struct {
+	Selector      string
+	Clusters      []string
+	AllFlag       bool
+	Username      string
+	ClientVersion string
+	Namespace     string
 }
 
 // DeleteUserResponse ...
@@ -44,20 +56,22 @@ type DeleteUserResponse struct {
 	Status
 }
 
-// UserResponse ...
-type UserResponse struct {
+// UpdateUserResponse ...
+type UpdateUserResponse struct {
 	Results []string
 	Status
 }
 
 // CreateUserRequest ...
 type CreateUserRequest struct {
-	Name            string
-	Namespace       string
-	Selector        string
-	Password        string
-	ManagedUser     bool
-	UserDBAccess    string
+	Clusters    []string
+	Username    string
+	Namespace   string
+	Selector    string
+	AllFlag     bool
+	Password    string
+	ManagedUser bool
+	//UserDBAccess    string
 	PasswordAgeDays int
 	ClientVersion   string
 	PasswordLength  int
@@ -76,11 +90,23 @@ type ShowUserSecret struct {
 	Password string
 }
 
+// ShowUserRequest ...
+type ShowUserRequest struct {
+	Clusters      []string
+	AllFlag       bool
+	ClientVersion string
+	Selector      string
+	Namespace     string
+	Expired       string
+}
+
 // ShowUsersDetail ...
 type ShowUserDetail struct {
-	Cluster     crv1.Pgcluster
-	Secrets     []ShowUserSecret
-	ExpiredMsgs []string
+	Cluster       crv1.Pgcluster
+	Secrets       []ShowUserSecret
+	ExpiredOutput bool
+	ExpiredDays   int
+	ExpiredMsgs   []string
 }
 
 // ShowUsersResponse ...

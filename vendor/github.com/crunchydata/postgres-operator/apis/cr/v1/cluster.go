@@ -40,6 +40,8 @@ type PgclusterSpec struct {
 	CCPImage           string               `json:"ccpimage"`
 	CCPImageTag        string               `json:"ccpimagetag"`
 	Port               string               `json:"port"`
+	PGBadgerPort       string               `json:"pgbadgerport"`
+	ExporterPort       string               `json:"exporterport"`
 	NodeName           string               `json:"nodename"`
 	PrimaryStorage     PgStorageSpec        `json:primarystorage`
 	ArchiveStorage     PgStorageSpec        `json:archivestorage`
@@ -55,6 +57,7 @@ type PgclusterSpec struct {
 	UserSecretName     string               `json:"usersecretname"`
 	RootSecretName     string               `json:"rootsecretname"`
 	PrimarySecretName  string               `json:"primarysecretname"`
+	CollectSecretName  string               `json:"collectSecretName"`
 	Status             string               `json:"status"`
 	PswLastUpdate      string               `json:"pswlastupdate"`
 	CustomConfig       string               `json:"customconfig"`
