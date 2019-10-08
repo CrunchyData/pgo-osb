@@ -88,6 +88,57 @@ assumes you are using the PostgreSQL Operator default RBAC
 account called *username* with a password of *password*.  If this is not
 the case then you will need to adjust the example service instance *service-instance.yaml*.
 
+== Operator Configuration
+
+The standalone and ha service plans require custom storage and container resource
+configurations in the Operator's pgo.yaml definition. Refer to the Operator documentation:
+https://access.crunchydata.com/documentation/postgres-operator/latest/configuration/pgo-yaml-configuration/
+
+The OSB will request custom storage and container resources corresponding to
+the size of plan, using the names `osbsmall`, `osbmedium`, `osblarge`. For example,
+the `standalone_md` plan will use disk sizes defined by the `osbmedium` custom
+storage definition and the memory and CPU limits defined by the `osbmedium`
+container resource definition.
+
+Example configuration descriptions:
+....
+Storage:
+  osbsmall:
+    AccessMode:  <based on environment>
+    Size:  300M
+    StorageType:  <based on environment>
+    StorageClass:  <based on environment>
+    Fsgroup:  26
+  osbmedium:
+    AccessMode:  <based on environment>
+    Size:  600M
+    StorageType:  <based on environment>
+    StorageClass:  <based on environment>
+    Fsgroup:  26
+  osblarge:
+    AccessMode:  <based on environment>
+    Size:  2G
+    StorageType:  <based on environment>
+    StorageClass:  <based on environment>
+    Fsgroup:  26
+ContainerResources:
+  osbsmall:
+    RequestsMemory:  512Mi
+    RequestsCPU:  0.1
+    LimitsMemory:  512Mi
+    LimitsCPU:  1.0
+  osbmedium:
+    RequestsMemory:  1Gi
+    RequestsCPU:  0.5
+    LimitsMemory:  1Gi
+    LimitsCPU:  2.0
+  osblarge:
+    RequestsMemory:  2Gi
+    RequestsCPU:  1.0
+    LimitsMemory:  2Gi
+    LimitsCPU:  4.0
+....
+
 == Build
 
 To build the *pgo-osb* broker, place these additional environment variables into your .bashrc as they
@@ -151,6 +202,22 @@ pgo-osb-69c76578b9-v7s9k   1/1       Running   0          16m
 
 To test the *pgo-osb* broker...
 
+View plans available:
+....
+$ svcat marketplace
+       CLASS            PLANS       DESCRIPTION   
++-----------------+---------------+--------------+
+  pgo-osb-service   standalone_lg   The pgo osb!  
+                    ha_lg                         
+                    default                       
+                    ha_sm                         
+                    standalone_sm                 
+                    ha_md                         
+                    standalone_md                 
+....
+Note: Additional services installed in your environment may be listed as well.
+
+
 Create an instance:
 ....
 cd $OSB_ROOT
@@ -187,33 +254,43 @@ using this command:
 ....
 # show the binding without secrets
 $ svcat describe binding testinstance-binding -n $OSB_NAMESPACE
-  Name:        testinstance-binding
-  Namespace:   demo
-  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC
-  Secret:      testinstance-binding
-  Instance:    testinstance
+  Name:        testinstance-binding                                          
+  Namespace:   demo                                                          
+  Status:      Ready - Injected bind result @ <timestamp>
+  Secret:      testinstance-binding                                          
+  Instance:    testinstance                                                  
 
 Parameters:
   No parameters defined
 
 Secret Data:
-  secrets    111 bytes
-  services   151 bytes
+  db_host         12 bytes  
+  db_name         6 bytes   
+  db_port         4 bytes   
+  internal_host   12 bytes  
+  password        16 bytes  
+  uri             85 bytes  
+  username        30 bytes  
 
 # show the binding with secrets
 $ svcat describe binding testinstance-binding --show-secrets -n $OSB_NAMESPACE
-  Name:        testinstance-binding
-  Namespace:   demo
-  Status:      Ready - Injected bind result @ 2018-08-24 13:44:29 +0000 UTC
-  Secret:      testinstance-binding
-  Instance:    testinstance
+  Name:        testinstance-binding                                          
+  Namespace:   demo                                                          
+  Status:      Ready - Injected bind result @ <timestamp>  
+  Secret:      testinstance-binding                                          
+  Instance:    testinstance                                                  
 
 Parameters:
   No parameters defined
 
 Secret Data:
-  secrets    [{"data":{"postgres":"mu7BDsFi3X","primaryuser":"FHhQwZAeot","testuser":"My2g9BxjFD"},"name":"somesecretname"}]
-  services   [{"name":"testinstance","spec":{"clusterIP":"10.104.162.117","externalIPs":[""],"ports":[{"name":"postgres","port":5432,"targetPort":0}]},"status":""}]
+  db_host         10.96.22.114                                                                           
+  db_name         userdb                                                                                 
+  db_port         5432                                                                                   
+  internal_host   10.96.22.114                                                                           
+  password        LEYtDzLOEMZTqiRH                                                                       
+  uri             postgresql://userd4a4kthjhyi6to6vvz5vdh4die:LEYtDzLOEMZTqiRH@10.96.22.114:5432/userdb  
+  username        userd4a4kthjhyi6to6vvz5vdh4die                                                         
 ....
 
 You can also use the *svcat* Service Catalog CLI to inspect
@@ -236,6 +313,7 @@ NAME         DESCRIPTION
 +-----------------+--------------+
 pgo-osb-service   The pgo osb!
 ....
+Note: Additional service classes installed in your environment may be listed as well.
 
 === View the Service Class
 
@@ -261,7 +339,7 @@ $ svcat get instances -n $OSB_NAMESPACE
 NAME      NAMESPACE        CLASS         PLAN     STATUS
 +------------+-----------+-----------------+---------+--------+
   testinstance   demo        pgo-osb-service   default   Ready
-  testy4       demo        pgo-osb-service   default   Ready
+  testinstance2  demo        pgo-osb-service   default   Ready
 ....
 
 
