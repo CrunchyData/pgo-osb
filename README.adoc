@@ -254,11 +254,11 @@ using this command:
 ....
 # show the binding without secrets
 $ svcat describe binding testinstance-binding -n $OSB_NAMESPACE
-  Name:        testinstance-binding                                          
-  Namespace:   demo                                                          
+  Name:        testinstance-binding
+  Namespace:   demo
   Status:      Ready - Injected bind result @ <timestamp>
-  Secret:      testinstance-binding                                          
-  Instance:    testinstance                                                  
+  Secret:      testinstance-binding
+  Instance:    testinstance
 
 Parameters:
   No parameters defined
@@ -274,11 +274,11 @@ Secret Data:
 
 # show the binding with secrets
 $ svcat describe binding testinstance-binding --show-secrets -n $OSB_NAMESPACE
-  Name:        testinstance-binding                                          
-  Namespace:   demo                                                          
-  Status:      Ready - Injected bind result @ <timestamp>  
-  Secret:      testinstance-binding                                          
-  Instance:    testinstance                                                  
+  Name:        testinstance-binding
+  Namespace:   demo
+  Status:      Ready - Injected bind result @ <timestamp>
+  Secret:      testinstance-binding
+  Instance:    testinstance
 
 Parameters:
   No parameters defined
