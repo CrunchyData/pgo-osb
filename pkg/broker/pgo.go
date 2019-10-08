@@ -421,6 +421,28 @@ func (po *PGOperator) DeleteCluster(instanceID string) error {
 		return err
 	}
 
+	// Ensure no bound users exist
+	clusterName := "all"
+	expired := ""
+	suResp, err := api.ShowUser(hc, clusterName, po.instLabel(instanceID), expired, &po.pgoCreds, ns)
+
+	if suResp.Status.Code != msgs.Ok {
+		m := suResp.Status.Msg
+		log.Println(m)
+		return errors.New("error fetching users: " + m)
+	}
+	if len(suResp.Results) == 0 {
+		log.Println("no users found, expected default users")
+		return errors.New("unexpected user state: no default users " + instanceID)
+	}
+	users := suResp.Results[0]
+	for _, s := range users.Secrets {
+		if strings.Compare("user", s.Username[:4]) == 0 {
+			return ErrBindingsRemain
+		}
+	}
+
+	// Proceed with deletion
 	deleteData := false
 	deleteBackups := false
 	log.Printf("deleting cluster %s with delete-data %t\n", selector, deleteData)
