@@ -44,16 +44,16 @@ import (
 var options struct {
 	broker.Options
 
-	Port                 int
-	Insecure             bool
+	Port                  int
+	Insecure              bool
 	PGO_APISERVER_URL     string
 	PGO_APISERVER_VERSION string
-	TLSCert              string
-	TLSKey               string
-	TLSCertFile          string
-	TLSKeyFile           string
-	AuthenticateK8SToken bool
-	KubeConfig           string
+	TLSCert               string
+	TLSKey                string
+	TLSCertFile           string
+	TLSKeyFile            string
+	AuthenticateK8SToken  bool
+	KubeConfig            string
 }
 
 func main() {
