@@ -33,11 +33,11 @@ clean: ## Cleans up build artifacts
 provision: ## Provisions a service instance
 	expenv -f manifests/service-instance.yaml | kubectl create -f -
 deprovision:
-	kubectl delete serviceinstance testinstance
+	kubectl delete serviceinstance testinstance -n ${OSB_NAMESPACE}
 provision2: ## Provisions a service instance
 	expenv -f manifests/service-instance2.yaml | kubectl create -f -
 deprovision2:
-	kubectl delete serviceinstance testinstance2
+	kubectl delete serviceinstance testinstance2 -n ${OSB_NAMESPACE}
 
 setup:
 	go get github.com/blang/expenv
