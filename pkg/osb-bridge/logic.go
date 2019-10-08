@@ -276,7 +276,13 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *osblib.RequestContext)
 }
 
 func (b *BusinessLogic) Unbind(request *osb.UnbindRequest, c *osblib.RequestContext) (*osblib.UnbindResponse, error) {
-	log.Println("Unbind called")
+	log.Printf("Unbind called req=%#v\n", request)
+	err := b.Broker.DeleteBinding(request.InstanceID, request.BindingID)
+
+	if err != nil {
+		log.Printf("error during unbind: %s\n", err)
+	}
+
 	return &osblib.UnbindResponse{}, nil
 }
 

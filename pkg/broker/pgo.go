@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	crv1 "github.com/crunchydata/postgres-operator/apis/cr/v1"
@@ -186,6 +187,29 @@ func (po *PGOperator) CreateBinding(instanceID, bindID, appID string) (BasicCred
 		return BasicCred{}, err
 	}
 
+	nu, err := CompactUUIDString(bindID)
+	if err != nil {
+		return BasicCred{}, fmt.Errorf("unable to process bindID: %s\n", err)
+	}
+	newUser := fmt.Sprintf("user%s", strings.ToLower(nu))
+
+	cuReq := msgs.CreateUserRequest{
+		Name:           newUser,
+		Namespace:      ns,
+		Selector:       po.instLabel(instanceID),
+		ManagedUser:    true,
+		ClientVersion:  po.clientVer,
+		PasswordLength: 16,
+	}
+	resp, err := api.CreateUser(hc, &po.pgoCreds, &cuReq)
+	if err != nil {
+		log.Printf("Unable to create user %s: %s\n", newUser, err)
+		return BasicCred{}, err
+	}
+	if resp.Code != msgs.Ok {
+		log.Printf("Unable to create user %s: %s\n", newUser, resp.Msg)
+	}
+
 	clusterName := "all"
 	expired := ""
 	response, err := api.ShowUser(hc, clusterName, po.instLabel(instanceID), expired, &po.pgoCreds, ns)
@@ -202,23 +226,20 @@ func (po *PGOperator) CreateBinding(instanceID, bindID, appID string) (BasicCred
 	users := response.Results[0]
 	log.Println("cluster secrets are:")
 	credentials := make(map[string]interface{})
-	if os.Getenv("CRUNCHY_DEBUG") == "true" {
-		for _, s := range users.Secrets {
-			if os.Getenv("CRUNCHY_DEBUG") == "true" {
-				log.Println("secret : " + s.Name)
-				log.Println("username: " + s.Username)
-				log.Println("password: " + s.Password)
-			}
-			credentials[s.Username] = s.Password
+	for _, s := range users.Secrets {
+		if os.Getenv("CRUNCHY_DEBUG") == "true" {
+			log.Println("secret : " + s.Name)
+			log.Println("username: " + s.Username)
+			log.Println("password: " + s.Password)
 		}
+		credentials[s.Username] = s.Password
 	}
 
-	tgtUser := "postgres"
-	if pass, ok := credentials[tgtUser]; !ok {
-		return BasicCred{}, errors.New("Unable to find 'postgres' user in cluster users")
+	if pass, ok := credentials[newUser]; !ok {
+		return BasicCred{}, errors.New("Unable to find newly created user in cluster users")
 	} else {
 		if pw, ok := pass.(string); ok {
-			return BasicCred{Username: tgtUser, Password: pw}, nil
+			return BasicCred{Username: newUser, Password: pw}, nil
 		} else {
 			return BasicCred{}, errors.New("Unrecognized type for password in API response")
 		}
@@ -314,7 +335,34 @@ func (po *PGOperator) CreateCluster(instanceID, name, namespace string) error {
 
 // DeleteBinding deletes existing binding users based on instance and bindID
 func (po *PGOperator) DeleteBinding(instanceID, bindID string) error {
-	// Currently noop
+	log.Printf("DeleteBinding called %s\n", instanceID)
+	hc, err := po.httpClient()
+	if err != nil {
+		return err
+	}
+
+	ns, err := po.findInstanceNamespace(instanceID)
+	if err != nil {
+		log.Printf("error finding instance in ClusterDetails: %s", err)
+		return err
+	}
+
+	u, err := CompactUUIDString(bindID)
+	if err != nil {
+		return fmt.Errorf("unable to process bindID: %s\n", err)
+	}
+	user := fmt.Sprintf("user%s", strings.ToLower(u))
+
+	resp, err := api.DeleteUser(hc, user, po.instLabel(instanceID), &po.pgoCreds, ns)
+	if err != nil {
+		return err
+	}
+	if resp.Status.Code == msgs.Ok {
+		log.Printf("Deleted user for binding %s\n", bindID)
+	} else {
+		return fmt.Errorf("response error to delete user: %s", resp.Msg)
+	}
+
 	return nil
 }
 
