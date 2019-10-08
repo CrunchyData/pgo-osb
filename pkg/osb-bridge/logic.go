@@ -243,20 +243,25 @@ func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *osblib.R
 	b.Lock()
 	defer b.Unlock()
 
-	response := osblib.DeprovisionResponse{}
+	response := &osblib.DeprovisionResponse{}
 
 	log.Printf("Deprovision instanceID=%s\n", request.InstanceID)
 	err := b.Broker.DeleteCluster(request.InstanceID)
 	if err != nil {
-		log.Printf("error deleting cluster: %s\n", err)
-		return nil, err
+		if _, ok := err.(broker.ErrNoInstance); ok {
+			log.Printf("Cannot find instance %s: suppressing error until HTTP 410 (Gone) can be provided", request.InstanceID)
+			return response, nil
+		} else {
+			log.Printf("error deleting cluster: %s\n", err)
+			return nil, err
+		}
 	}
 
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}
 
-	return &response, nil
+	return response, nil
 }
 
 func (b *BusinessLogic) LastOperation(request *osb.LastOperationRequest, c *osblib.RequestContext) (*osblib.LastOperationResponse, error) {
