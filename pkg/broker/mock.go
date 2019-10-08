@@ -61,13 +61,13 @@ func (m *Mock) ClusterDetail(instanceID string) (ClusterDetails, error) {
 	return inst, nil
 }
 
-func (m *Mock) CreateCluster(instanceID, name, namespace string) error {
+func (m *Mock) CreateCluster(req CreateRequest) error {
 	m.Lock()
 	defer m.Unlock()
 
-	m.instances[instanceID] = ClusterDetails{
-		Name:        name,
-		ClusterName: name,
+	m.instances[req.InstanceID] = ClusterDetails{
+		Name:        req.Name,
+		ClusterName: req.Name,
 		ExternalIP:  MockStatic.ExternalIP,
 		ClusterIP:   MockStatic.ClusterIP,
 	}

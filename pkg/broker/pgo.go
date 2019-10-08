@@ -169,6 +169,42 @@ func (po *PGOperator) instLabel(instID string) string {
 	return po.instLabelKey + "=" + instID
 }
 
+// createRequestByPlan updates cluster creation requests associated with plan
+// unique identifiers
+func (po *PGOperator) createRequestByPlan(planID string, req *msgs.CreateClusterRequest) {
+	switch planID {
+	case "885a1cb6-ca42-43e9-a725-8195918e1343":
+		req.MetricsFlag = true
+		req.ContainerResources = "osbsmall"
+		req.StorageConfig = "osbsmall"
+	case "dc951396-bb28-45a4-b040-cfe3bebc6121":
+		req.MetricsFlag = true
+		req.ContainerResources = "osbmedium"
+		req.StorageConfig = "osbmedium"
+	case "04349656-4dc9-4b67-9b15-52a93d64d566":
+		req.MetricsFlag = true
+		req.ContainerResources = "osblarge"
+		req.StorageConfig = "osblarge"
+	case "877432f8-07eb-4e57-b984-d025a71d2282":
+		req.MetricsFlag = true
+		req.ReplicaCount = 1
+		req.ContainerResources = "osbsmall"
+		req.StorageConfig = "osbsmall"
+	case "89bcdf8a-e637-4bb3-b7ce-aca083cc1e69":
+		req.MetricsFlag = true
+		req.ReplicaCount = 1
+		req.ContainerResources = "osbmedium"
+		req.StorageConfig = "osbmedium"
+	case "470ca1a0-2763-41f1-a4cf-985acdb549ab":
+		req.MetricsFlag = true
+		req.ReplicaCount = 1
+		req.ContainerResources = "osblarge"
+		req.StorageConfig = "osblarge"
+	default:
+		return
+	}
+}
+
 // CreateBinding creates and/or returns binding information for a cluster
 func (po *PGOperator) CreateBinding(instanceID, bindID, appID string) (BasicCred, error) {
 	log.Printf("CreateBinding called %s\n", instanceID)
@@ -301,8 +337,8 @@ func (po *PGOperator) ClusterDetail(instanceID string) (ClusterDetails, error) {
 }
 
 // CreateCluster implements the PGOperator interface for creating clusters
-func (po *PGOperator) CreateCluster(instanceID, name, namespace string) error {
-	log.Printf("CreateCluster called %s\n", instanceID)
+func (po *PGOperator) CreateCluster(req CreateRequest) error {
+	log.Printf("CreateCluster called %s\n", req.InstanceID)
 	hc, err := po.httpClient()
 	if err != nil {
 		return err
@@ -310,13 +346,15 @@ func (po *PGOperator) CreateCluster(instanceID, name, namespace string) error {
 
 	r := &msgs.CreateClusterRequest{
 		ClientVersion: po.clientVer,
-		Name:          name,
-		Namespace:     namespace,
+		Name:          req.Name,
+		Namespace:     req.Namespace,
 		Series:        1,
-		UserLabels:    po.instLabel(instanceID),
+		UserLabels:    po.instLabel(req.InstanceID),
 	}
+	po.createRequestByPlan(req.PlanID, r)
 	log.Println("user label applied to cluster is [" + r.UserLabels + "]")
 
+	log.Printf("creation request: %#v\n", r)
 	response, err := api.CreateCluster(hc, &po.pgoCreds, r)
 	if err != nil {
 		log.Println("create cluster error: ", err)

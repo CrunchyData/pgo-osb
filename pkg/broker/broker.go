@@ -23,11 +23,19 @@ type BasicCred struct {
 	Password string
 }
 
+// ClusterDetails encapsulates information returned about the cluster
 type ClusterDetails struct {
 	Name        string
 	ClusterIP   string
 	ExternalIP  string
 	ClusterName string
+}
+
+type CreateRequest struct {
+	InstanceID string
+	Name       string
+	Namespace  string
+	PlanID     string
 }
 
 // Executor defines an interface for servicing OSB requests
@@ -39,7 +47,7 @@ type Executor interface {
 
 // Provisioner defines an interface for (de)provisioning clusters
 type Provisioner interface {
-	CreateCluster(instanceID, name, namespace string) error
+	CreateCluster(req CreateRequest) error
 	DeleteCluster(instanceID string) error
 }
 

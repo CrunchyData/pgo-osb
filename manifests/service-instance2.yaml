@@ -5,7 +5,7 @@ metadata:
   namespace: $OSB_NAMESPACE
 spec:
   clusterServiceClassExternalName: pgo-osb-service
-  clusterServicePlanExternalName: default
+  clusterServicePlanExternalName: ha_sm
   parameters:
     PGO_CLUSTERNAME: testinstance2
     PGO_NAMESPACE: $PGO_NAMESPACE

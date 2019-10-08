@@ -77,18 +77,46 @@ func TestUnitCatalog(t *testing.T) {
 		t.Errorf("Update function unimplemented, expected PlanUpdatable to be false or undefined")
 	}
 
-	if l := len(svc.Plans); l != 1 {
-		t.Fatalf("expected one and only one plan, found %d", l)
+	if l := len(svc.Plans); l != 7 {
+		t.Fatalf("expected seven plans, found %d", l)
 	}
-
-	plan := svc.Plans[0]
 
 	// Some platforms (PCF) freak out if the plan name changes or goes away
 	// Do not blindly update this test case without taking that into account
-	if plan.Name != "default" || plan.ID != "86064792-7ea2-467b-af93-ac9694d96d5c" {
-		t.Fatal("unexpected plan Name or ID change")
+	for _, plan := range svc.Plans {
+		switch plan.Name {
+		case "default":
+			if plan.ID != "86064792-7ea2-467b-af93-ac9694d96d5c" {
+				t.Error("unexpected plan Name or ID change for default plan")
+			}
+		case "standalone_sm":
+			if plan.ID != "885a1cb6-ca42-43e9-a725-8195918e1343" {
+				t.Error("unexpected plan Name or ID change for standalone_sm plan")
+			}
+		case "standalone_md":
+			if plan.ID != "dc951396-bb28-45a4-b040-cfe3bebc6121" {
+				t.Error("unexpected plan Name or ID change for standalone_md plan")
+			}
+		case "standalone_lg":
+			if plan.ID != "04349656-4dc9-4b67-9b15-52a93d64d566" {
+				t.Error("unexpected plan Name or ID change for standalone_lg plan")
+			}
+		case "ha_sm":
+			if plan.ID != "877432f8-07eb-4e57-b984-d025a71d2282" {
+				t.Error("unexpected plan Name or ID change for ha_sm plan")
+			}
+		case "ha_md":
+			if plan.ID != "89bcdf8a-e637-4bb3-b7ce-aca083cc1e69" {
+				t.Error("unexpected plan Name or ID change for ha_md plan")
+			}
+		case "ha_lg":
+			if plan.ID != "470ca1a0-2763-41f1-a4cf-985acdb549ab" {
+				t.Error("unexpected plan Name or ID change for ha_lg plan")
+			}
+		default:
+			t.Errorf("Unexpected plan name: %s", plan.Name)
+		}
 	}
-
 }
 
 func TestUnitProvisionBasic(t *testing.T) {

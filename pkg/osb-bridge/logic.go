@@ -141,6 +141,48 @@ func (b *BusinessLogic) GetCatalog(c *osblib.RequestContext) (*osblib.CatalogRes
 						Free:        truePtr(),
 						Schemas:     paramSchemas,
 					},
+					{
+						Name:        "standalone_sm",
+						ID:          "885a1cb6-ca42-43e9-a725-8195918e1343",
+						Description: "Small postgres server, no replicas",
+						Free:        truePtr(),
+						Schemas:     paramSchemas,
+					},
+					{
+						Name:        "standalone_md",
+						ID:          "dc951396-bb28-45a4-b040-cfe3bebc6121",
+						Description: "Medium postgres server, no replicas",
+						Free:        truePtr(),
+						Schemas:     paramSchemas,
+					},
+					{
+						Name:        "standalone_lg",
+						ID:          "04349656-4dc9-4b67-9b15-52a93d64d566",
+						Description: "Large postgres server, no replicas",
+						Free:        truePtr(),
+						Schemas:     paramSchemas,
+					},
+					{
+						Name:        "ha_sm",
+						ID:          "877432f8-07eb-4e57-b984-d025a71d2282",
+						Description: "Small postgres server with replicas",
+						Free:        truePtr(),
+						Schemas:     paramSchemas,
+					},
+					{
+						Name:        "ha_md",
+						ID:          "89bcdf8a-e637-4bb3-b7ce-aca083cc1e69",
+						Description: "Medium postgres server with replicas",
+						Free:        truePtr(),
+						Schemas:     paramSchemas,
+					},
+					{
+						Name:        "ha_lg",
+						ID:          "470ca1a0-2763-41f1-a4cf-985acdb549ab",
+						Description: "Large postgres server with replicas",
+						Free:        truePtr(),
+						Schemas:     paramSchemas,
+					},
 				},
 			},
 		},
@@ -181,7 +223,12 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *osblib.Reque
 	log.Println("provision PGO_CLUSTERNAME=" + rp.ClusterName)
 	log.Println("provision PGO_NAMESPACE=" + rp.Namespace)
 
-	err := b.Broker.CreateCluster(request.InstanceID, rp.ClusterName, rp.Namespace)
+	err := b.Broker.CreateCluster(broker.CreateRequest{
+		InstanceID: request.InstanceID,
+		Name:       rp.ClusterName,
+		Namespace:  rp.Namespace,
+		PlanID:     request.PlanID,
+	})
 	if err != nil {
 		log.Printf("error during Provision: %s", err)
 		return nil, err
