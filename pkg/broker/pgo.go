@@ -432,7 +432,7 @@ func (po *PGOperator) DeleteCluster(instanceID string) error {
 	ns, err := po.findInstanceNamespace(instanceID)
 	if err != nil {
 		log.Printf("error finding instance in DeleteCluster: %s\n", err)
-		return err
+		return ErrNoInstance{ID: instanceID}
 	}
 
 	// Ensure no bound users exist
