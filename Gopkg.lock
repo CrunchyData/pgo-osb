@@ -111,6 +111,14 @@
   version = "v0.17.0"
 
 [[projects]]
+  digest = "1:bde9f189072512ba353f3641d4839cb4c9c7edf421e467f2c03f267b402bd16c"
+  name = "github.com/gofrs/uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "6b08a5c5172ba18946672b49749cde22873dd7c2"
+  version = "v3.2.0"
+
+[[projects]]
   digest = "1:8679b8a64f3613e9749c5640c3535c83399b8e69f67ce54d91dc73f6d77373af"
   name = "github.com/gogo/protobuf"
   packages = [
@@ -375,14 +383,6 @@
   revision = "185b4288413d2a0dd0806f78c90dde719829e5ae"
 
 [[projects]]
-  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
-
-[[projects]]
   digest = "1:86456cdf3b702c097b917e533c351716b009ae32ada45283eb938e796381c2c5"
   name = "github.com/shawn-hurley/osb-broker-k8s-lib"
   packages = ["middleware"]
@@ -638,17 +638,16 @@
     "github.com/crunchydata/postgres-operator/kubeapi",
     "github.com/crunchydata/postgres-operator/pgo/api",
     "github.com/crunchydata/postgres-operator/util",
+    "github.com/gofrs/uuid",
     "github.com/pmorie/go-open-service-broker-client/v2",
     "github.com/pmorie/osb-broker-lib/pkg/broker",
     "github.com/pmorie/osb-broker-lib/pkg/metrics",
     "github.com/pmorie/osb-broker-lib/pkg/rest",
     "github.com/pmorie/osb-broker-lib/pkg/server",
     "github.com/prometheus/client_golang/prometheus",
-    "github.com/satori/go.uuid",
     "github.com/shawn-hurley/osb-broker-k8s-lib/middleware",
     "github.com/sirupsen/logrus",
     "gopkg.in/yaml.v2",
-    "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",

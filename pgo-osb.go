@@ -28,11 +28,12 @@ import (
 	"github.com/crunchydata/pgo-osb/pkg/osb-bridge"
 	"github.com/crunchydata/postgres-operator/config"
 	"github.com/crunchydata/postgres-operator/util"
+
+	"github.com/gofrs/uuid"
 	"github.com/pmorie/osb-broker-lib/pkg/metrics"
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
 	prom "github.com/prometheus/client_golang/prometheus"
-	uuid "github.com/satori/go.uuid"
 	"github.com/shawn-hurley/osb-broker-k8s-lib/middleware"
 	clientset "k8s.io/client-go/kubernetes"
 	clientrest "k8s.io/client-go/rest"
@@ -71,7 +72,11 @@ func main() {
 	log.Println(config.LABEL_PG_CLUSTER)
 
 	if options.PGO_OSB_GUID == "" {
-		u := uuid.NewV4()
+		u, err := uuid.NewV4()
+		if err != nil {
+			log.Printf("PGO_OSB_GUID not set and received error generating one: %s\n", err)
+			return
+		}
 		options.PGO_OSB_GUID = u.String()
 
 		log.Print("generating GUID for this broker since none was supplied in the PGO_OSB_GUID env var: GUID is " + options.PGO_OSB_GUID)

@@ -38,8 +38,8 @@
   version = "0.0.3"
 
 [[constraint]]
-  name = "github.com/satori/go.uuid"
-  version = "v1.2.0"
+  name = "github.com/gofrs/uuid"
+  version = "v3.2.0"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"

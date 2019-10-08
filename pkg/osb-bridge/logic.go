@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/crunchydata/pgo-osb/pkg/broker"
+
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	osblib "github.com/pmorie/osb-broker-lib/pkg/broker"
 	"k8s.io/client-go/rest"
@@ -68,7 +69,7 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 	}
 
 	if o.Simulated {
-		// NoOp for now
+		logic.Broker = broker.NewMock()
 	} else {
 		log.Println("Establishing remote...")
 		log.Println("  PGO_APISERVER_URL=" + logic.PGO_APISERVER_URL)
@@ -98,17 +99,36 @@ func truePtr() *bool {
 }
 
 func (b *BusinessLogic) GetCatalog(c *osblib.RequestContext) (*osblib.CatalogResponse, error) {
-
 	log.Println("GetCatalog called")
 	response := &osblib.CatalogResponse{}
+	paramSchemas := &osb.Schemas{
+		ServiceInstance: &osb.ServiceInstanceSchema{
+			Create: &osb.InputParametersSchema{
+				Parameters: map[string]interface{}{
+					"type":    "object",
+					"$schema": "http://json-schema.org/draft-04/schema#",
+					"properties": map[string]interface{}{
+						"PGO_CLUSTERNAME": map[string]interface{}{
+							"type":    "string",
+							"default": "Clear",
+						},
+						"PGO_NAMESPACE": map[string]interface{}{
+							"type":    "string",
+							"default": "Clear",
+						},
+					},
+				},
+			},
+		},
+	}
+
 	osbResponse := &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
-				Name:          "pgo-osb-service",
-				ID:            b.PGO_OSB_GUID,
-				Description:   "The pgo osb!",
-				Bindable:      true,
-				PlanUpdatable: truePtr(),
+				Name:        "pgo-osb-service",
+				ID:          b.PGO_OSB_GUID,
+				Description: "The pgo osb!",
+				Bindable:    true,
 				Metadata: map[string]interface{}{
 					"displayName": "pgo osb service",
 					"imageUrl":    "https://avatars2.githubusercontent.com/u/19862012?s=200&v=4",
@@ -119,26 +139,7 @@ func (b *BusinessLogic) GetCatalog(c *osblib.RequestContext) (*osblib.CatalogRes
 						ID:          "86064792-7ea2-467b-af93-ac9694d96d5c",
 						Description: "The default plan for the pgo osb service",
 						Free:        truePtr(),
-						Schemas: &osb.Schemas{
-							ServiceInstance: &osb.ServiceInstanceSchema{
-								Create: &osb.InputParametersSchema{
-									Parameters: map[string]interface{}{
-										"type":    "object",
-										"$schema": "http://json-schema.org/draft-04/schema#",
-										"properties": map[string]interface{}{
-											"PGO_CLUSTERNAME": map[string]interface{}{
-												"type":    "string",
-												"default": "Clear",
-											},
-											"PGO_NAMESPACE": map[string]interface{}{
-												"type":    "string",
-												"default": "Clear",
-											},
-										},
-									},
-								},
-							},
-						},
+						Schemas:     paramSchemas,
 					},
 				},
 			},
@@ -170,6 +171,12 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *osblib.Reque
 	// Since handling request.Parameters is being delegated to the
 	// encapsulating type, direct access beyond here should raise suspicion
 	rp := NewProvReqParams(request.Parameters)
+	if rp.ClusterName == "" {
+		return nil, fmt.Errorf("Missing required parameter: PGO_CLUSTERNAME")
+	}
+	if rp.Namespace == "" {
+		return nil, fmt.Errorf("Missing required parameter: PGO_NAMESPACE")
+	}
 
 	log.Println("provision PGO_CLUSTERNAME=" + rp.ClusterName)
 	log.Println("provision PGO_NAMESPACE=" + rp.Namespace)

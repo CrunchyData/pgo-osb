@@ -30,6 +30,7 @@ import (
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
 	"github.com/crunchydata/postgres-operator/kubeapi"
 	api "github.com/crunchydata/postgres-operator/pgo/api"
+
 	"k8s.io/client-go/rest"
 )
 
