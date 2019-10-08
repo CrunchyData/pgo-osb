@@ -100,15 +100,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 										"type":    "object",
 										"$schema": "http://json-schema.org/draft-04/schema#",
 										"properties": map[string]interface{}{
-											"PGO_USERNAME": map[string]interface{}{
-												"type":    "string",
-												"default": "Clear",
-											},
 											"PGO_CLUSTERNAME": map[string]interface{}{
-												"type":    "string",
-												"default": "Clear",
-											},
-											"PGO_PASSWORD": map[string]interface{}{
 												"type":    "string",
 												"default": "Clear",
 											},
@@ -154,8 +146,8 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 	// encapsulating type, direct access beyond here should raise suspicion
 	reqParams := NewProvReqParams(request.Parameters)
 
-	log.Println("provision PGO_USERNAME=" + reqParams.PGOUsername)
-	log.Println("provision PGO_PASSWORD=" + reqParams.PGOPassword)
+	log.Println("provision PGO_USERNAME=" + b.PGO_USERNAME)
+	log.Println("provision PGO_PASSWORD=" + b.PGO_PASSWORD)
 	log.Println("provision PGO_CLUSTERNAME=" + reqParams.ClusterName)
 	log.Println("provision PGO_NAMESPACE=" + reqParams.Namespace)
 
@@ -163,8 +155,8 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 	log.Println("provision PGO_APISERVER_VERSION=" + b.PGO_APISERVER_VERSION)
 
 	pgocmd.CreateCluster(b.PGO_APISERVER_URL,
-		reqParams.PGOUsername,
-		reqParams.PGOPassword,
+		b.PGO_USERNAME,
+		b.PGO_PASSWORD,
 		reqParams.ClusterName,
 		b.PGO_APISERVER_VERSION,
 		request.InstanceID,

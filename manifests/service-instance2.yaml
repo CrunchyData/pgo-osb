@@ -7,7 +7,5 @@ spec:
   clusterServiceClassExternalName: pgo-osb-service
   clusterServicePlanExternalName: default
   parameters:
-    PGO_USERNAME: username
-    PGO_PASSWORD: password
     PGO_CLUSTERNAME: testinstance2
     PGO_NAMESPACE: $PGO_NAMESPACE
