@@ -36,20 +36,23 @@ spec:
         - --PGO_OSB_GUID
         - "4be12541-2945-4101-8a33-79ac0ad58750"
         - --PGO_APISERVER_URL
-        - "https://postgres-operator:8443"
+        - "https://postgres-operator.pgo.svc.cluster.local:8443"
         - --PGO_APISERVER_VERSION
         - "4.0.1"
+        - --insecure
+        - "true"
         - --logtostderr
         - --tls-cert-file
-        - "/var/run/pgo-osb/server.crt"
+        - ""
         - --tls-private-key-file
-        - "/var/run/pgo-osb/server.key"
+        - ""
+        - --authenticate-k8s-token
         ports:
         - containerPort: 8443
         readinessProbe:
           httpGet:
             path: /healthz
-            scheme: HTTPS
+            scheme: HTTP
             port: 8443
           failureThreshold: 1
           initialDelaySeconds: 10
