@@ -150,14 +150,25 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		response.Async = b.async
 	}
 
-	log.Println("provision PGO_USERNAME=" + request.Parameters["PGO_USERNAME"].(string))
-	log.Println("provision PGO_PASSWORD=" + request.Parameters["PGO_PASSWORD"].(string))
-	log.Println("provision PGO_CLUSTERNAME=" + request.Parameters["PGO_CLUSTERNAME"].(string))
+	// Since handling request.Parameters is being delegated to the
+	// encapsulating type, direct access beyond here should raise suspicion
+	reqParams := NewProvReqParams(request.Parameters)
+
+	log.Println("provision PGO_USERNAME=" + reqParams.PGOUsername)
+	log.Println("provision PGO_PASSWORD=" + reqParams.PGOPassword)
+	log.Println("provision PGO_CLUSTERNAME=" + reqParams.ClusterName)
+	log.Println("provision PGO_NAMESPACE=" + reqParams.Namespace)
 
 	log.Println("provision PGO_APISERVER_URL=" + b.PGO_APISERVER_URL)
 	log.Println("provision PGO_APISERVER_VERSION=" + b.PGO_APISERVER_VERSION)
 
-	pgocmd.CreateCluster(b.PGO_APISERVER_URL, request.Parameters["PGO_USERNAME"].(string), request.Parameters["PGO_PASSWORD"].(string), request.Parameters["PGO_CLUSTERNAME"].(string), b.PGO_APISERVER_VERSION, request.InstanceID, request.Parameters["PGO_NAMESPACE"].(string))
+	pgocmd.CreateCluster(b.PGO_APISERVER_URL,
+		reqParams.PGOUsername,
+		reqParams.PGOPassword,
+		reqParams.ClusterName,
+		b.PGO_APISERVER_VERSION,
+		request.InstanceID,
+		reqParams.Namespace)
 	return &response, nil
 }
 
