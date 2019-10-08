@@ -22,8 +22,6 @@ import (
 // Many of the types present represent safe access to request payloads and
 // provide hooks for centralized unpacking and validation
 type provReqParams struct {
-	PGOUsername string
-	PGOPassword string
 	ClusterName string
 	Namespace   string
 }
@@ -34,22 +32,6 @@ func NewProvReqParams(params map[string]interface{}) *provReqParams {
 	rp := &provReqParams{}
 	if params == nil {
 		return rp
-	}
-
-	if u, ok := params["PGO_USERNAME"]; ok {
-		if _, ok := u.(string); ok {
-			rp.PGOUsername = u.(string)
-		} else {
-			log.Printf("Expected type string for PGO_USERNAME, got %T instead", u)
-		}
-	}
-
-	if p, ok := params["PGO_PASSWORD"]; ok {
-		if _, ok := p.(string); ok {
-			rp.PGOPassword = p.(string)
-		} else {
-			log.Printf("Expected type string for PGO_PASSWORD, got %T instead", p)
-		}
 	}
 
 	if cn, ok := params["PGO_CLUSTERNAME"]; ok {
