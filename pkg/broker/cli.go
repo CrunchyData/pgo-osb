@@ -30,6 +30,7 @@ type Options struct {
 	PGO_APISERVER_URL     string
 	PGO_APISERVER_VERSION string
 	Async                 bool
+	Simulated             bool
 }
 
 // AddFlags is a hook called to initialize the CLI flags for broker options.
