@@ -17,6 +17,8 @@ limitations under the License.
 
 import (
 	"flag"
+
+	"k8s.io/client-go/rest"
 )
 
 // Options holds the options specified by the broker's code on the command
@@ -30,7 +32,10 @@ type Options struct {
 	PGO_APISERVER_URL     string
 	PGO_APISERVER_VERSION string
 	Async                 bool
-	Simulated             bool
+
+	// Unflagged configs
+	Simulated     bool
+	KubeAPIClient *rest.RESTClient
 }
 
 // AddFlags is a hook called to initialize the CLI flags for broker options.

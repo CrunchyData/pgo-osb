@@ -25,7 +25,6 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/crunchydata/pgo-osb/pkg/broker"
 	"github.com/crunchydata/pgo-osb/pkg/osb-bridge"
 	"github.com/crunchydata/postgres-operator/config"
 	"github.com/crunchydata/postgres-operator/util"
@@ -104,6 +103,12 @@ func runWithContext(ctx context.Context) error {
 
 	addr := ":" + strconv.Itoa(options.Port)
 
+	RESTClient, err := getRestClient(options.KubeConfig)
+	if err != nil {
+		return err
+	}
+	options.Options.KubeAPIClient = RESTClient
+
 	businessLogic, err := bridge.NewBusinessLogic(options.Options)
 	if err != nil {
 		return err
@@ -138,12 +143,6 @@ func runWithContext(ctx context.Context) error {
 		// Use TokenReviewMiddleware.
 		s.Router.Use(tr.Middleware)
 	}
-
-	RESTClient, err := getRestClient(options.KubeConfig)
-	if err != nil {
-		return err
-	}
-	broker.RESTClient = RESTClient
 
 	log.Print("Starting broker!")
 

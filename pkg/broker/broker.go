@@ -15,13 +15,7 @@ package broker
  limitations under the License.
 */
 
-import (
-	"k8s.io/client-go/rest"
-)
-
-// RESTClient represents the REST client for Kube
-// TODO: Can RESTClient be easily pulled into remote, logically belongs
-var RESTClient *rest.RESTClient
+import ()
 
 // BasicCred represents a common pair of username and password
 type BasicCred struct {
@@ -36,11 +30,21 @@ type ClusterDetails struct {
 	ClusterName string
 }
 
-// Remote defines an interface for servicing OSB requests
-type Remote interface {
-	BindingUser(instanceID, appID, bindID string) (BasicCred, error)
+// Executor defines an interface for servicing OSB requests
+type Executor interface {
+	Provisioner
+	Binder
 	ClusterDetail(instanceID string) (ClusterDetails, error)
+}
+
+// Provisioner defines an interface for (de)provisioning clusters
+type Provisioner interface {
 	CreateCluster(instanceID, name, namespace string) error
-	DeleteBinding(instanceID, bindID string) error
 	DeleteCluster(instanceID string) error
+}
+
+// Binder defines an interface for creating and deleting user bindings
+type Binder interface {
+	CreateBinding(instanceID, bindID, appID string) (BasicCred, error)
+	DeleteBinding(instanceID, bindID string) error
 }

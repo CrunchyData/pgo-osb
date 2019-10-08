@@ -24,7 +24,28 @@ import (
 	"github.com/crunchydata/pgo-osb/pkg/broker"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
 	osblib "github.com/pmorie/osb-broker-lib/pkg/broker"
+	"k8s.io/client-go/rest"
 )
+
+// Verify BusinessLogic implements the interface
+var _ osblib.Interface = &BusinessLogic{}
+
+// BusinessLogic provides an implementation of the osblib.BusinessLogic
+// interface.
+type BusinessLogic struct {
+	// Indicates if the broker should handle the requests asynchronously.
+	async bool
+	// Synchronize go routines.
+	sync.RWMutex
+
+	PGO_OSB_GUID          string
+	PGO_APISERVER_URL     string
+	PGO_APISERVER_VERSION string
+	PGO_USERNAME          string
+	PGO_PASSWORD          string
+	Broker                broker.Executor
+	kubeAPIClient         *rest.RESTClient
+}
 
 // NewBusinessLogic is a hook that is called with the Options the program is run
 // with. NewBusinessLogic is the place where you will initialize your
@@ -43,6 +64,7 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 		PGO_APISERVER_VERSION: o.PGO_APISERVER_VERSION,
 		PGO_USERNAME:          o.PGO_USERNAME,
 		PGO_PASSWORD:          o.PGO_PASSWORD,
+		kubeAPIClient:         o.KubeAPIClient,
 	}
 
 	if o.Simulated {
@@ -54,38 +76,21 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 		log.Println("  PGO_USERNAME=" + logic.PGO_USERNAME)
 		log.Println("  PGO_PASSWORD=" + logic.PGO_PASSWORD)
 
-		r, err := broker.NewPGORemote(
+		r, err := broker.NewPGOperator(
+			logic.kubeAPIClient,
 			logic.PGO_APISERVER_URL,
 			logic.PGO_USERNAME,
 			logic.PGO_PASSWORD,
 			logic.PGO_APISERVER_VERSION)
 		if err != nil {
-			log.Printf("error establishing PGORemote: %s", err)
+			log.Printf("error establishing PGO broker: %s", err)
 			return nil, err
 		}
-		logic.Remote = r
+		logic.Broker = r
 	}
 
 	return logic, nil
 }
-
-// BusinessLogic provides an implementation of the broker.BusinessLogic
-// interface.
-type BusinessLogic struct {
-	// Indicates if the broker should handle the requests asynchronously.
-	async bool
-	// Synchronize go routines.
-	sync.RWMutex
-
-	PGO_OSB_GUID          string
-	PGO_APISERVER_URL     string
-	PGO_APISERVER_VERSION string
-	PGO_USERNAME          string
-	PGO_PASSWORD          string
-	Remote                broker.Remote
-}
-
-var _ osblib.Interface = &BusinessLogic{}
 
 func truePtr() *bool {
 	b := true
@@ -169,7 +174,7 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *osblib.Reque
 	log.Println("provision PGO_CLUSTERNAME=" + rp.ClusterName)
 	log.Println("provision PGO_NAMESPACE=" + rp.Namespace)
 
-	err := b.Remote.CreateCluster(request.InstanceID, rp.ClusterName, rp.Namespace)
+	err := b.Broker.CreateCluster(request.InstanceID, rp.ClusterName, rp.Namespace)
 	if err != nil {
 		log.Printf("error during Provision: %s", err)
 		return nil, err
@@ -187,7 +192,7 @@ func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *osblib.R
 	response := osblib.DeprovisionResponse{}
 
 	log.Printf("Deprovision instanceID=%s\n", request.InstanceID)
-	err := b.Remote.DeleteCluster(request.InstanceID)
+	err := b.Broker.DeleteCluster(request.InstanceID)
 	if err != nil {
 		log.Printf("error deleting cluster: %s\n", err)
 		return nil, err
@@ -210,18 +215,17 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *osblib.RequestContext)
 	log.Printf("Bind called request instanceID=%s\n", request.InstanceID)
 	log.Printf("Bind called broker ctx=%#v\n", c)
 
-	clusterDetail, err := b.Remote.ClusterDetail(request.InstanceID)
+	clusterDetail, err := b.Broker.ClusterDetail(request.InstanceID)
 	if err != nil {
 		log.Printf("error getting cluster info: %s\n", err)
 		return nil, err
 	}
 
-	appGUID := ""
+	appID := ""
 	if request.AppGUID != nil {
-		appGUID = *request.AppGUID
+		appID = *request.AppGUID
 	}
-
-	bindCreds, err := b.Remote.BindingUser(request.InstanceID, appGUID, request.BindingID)
+	bindCreds, err := b.Broker.CreateBinding(request.InstanceID, request.BindingID, appID)
 	if err != nil {
 		log.Printf("error getting binding info: %s\n", err)
 		return nil, err

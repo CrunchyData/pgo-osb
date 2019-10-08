@@ -30,6 +30,7 @@ import (
 	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
 	"github.com/crunchydata/postgres-operator/kubeapi"
 	api "github.com/crunchydata/postgres-operator/pgo/api"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -38,22 +39,27 @@ const (
 	_BIND_LABEL_KEY     = "pgo-osb-bindid"
 )
 
-type PGORemote struct {
+type PGOperator struct {
 	remoteURL    string
 	bindLabelKey string
 	clientVer    string
 	instLabelKey string
+	kubeClient   *rest.RESTClient
 	pgoCreds     msgs.BasicAuthCredentials
 	nsLookup     map[string]string
 	nsMutex      sync.RWMutex
 }
 
-// NewPGORemote sets up authentication information for a PGO client
-func NewPGORemote(APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion string) (*PGORemote, error) {
-	pr := &PGORemote{
+// NewPGOperator sets up authentication information for a PGO client
+func NewPGOperator(KubeClient *rest.RESTClient, APIServerURL, basicAuthUsername, basicAuthPassword, clientVersion string) (*PGOperator, error) {
+	if KubeClient == nil {
+		return nil, errors.New("KubeClient cannot be nil")
+	}
+	po := &PGOperator{
 		bindLabelKey: _BIND_LABEL_KEY,
 		clientVer:    clientVersion,
 		instLabelKey: _INSTANCE_LABEL_KEY,
+		kubeClient:   KubeClient,
 		nsLookup:     map[string]string{},
 		pgoCreds: msgs.BasicAuthCredentials{
 			APIServerURL: APIServerURL,
@@ -64,30 +70,30 @@ func NewPGORemote(APIServerURL, basicAuthUsername, basicAuthPassword, clientVers
 	}
 
 	// TEST: Files there at start?
-	_, err := pr.httpClient()
+	_, err := po.httpClient()
 	if err != nil {
 		log.Printf("error on initial httpClient: %s", err)
 		return nil, err
 	}
 
-	return pr, nil
+	return po, nil
 }
 
 // findInstanceNamespace finds the cluster for a given instID to get the
 // namespace for searching via the PGO API. It caches seen values to avoid
 // continual kubeapi lookups
-func (pr *PGORemote) findInstanceNamespace(instID string) (string, error) {
-	pr.nsMutex.RLock()
-	if ns, ok := pr.nsLookup[instID]; ok {
-		pr.nsMutex.RUnlock()
+func (po *PGOperator) findInstanceNamespace(instID string) (string, error) {
+	po.nsMutex.RLock()
+	if ns, ok := po.nsLookup[instID]; ok {
+		po.nsMutex.RUnlock()
 		return ns, nil
 	} else {
-		pr.nsMutex.RUnlock()
-		selector := pr.instLabel(instID)
+		po.nsMutex.RUnlock()
+		selector := po.instLabel(instID)
 		log.Print("find cluster " + selector)
 
 		clusterList := crv1.PgclusterList{}
-		err := kubeapi.GetpgclustersBySelector(RESTClient, &clusterList, selector, "")
+		err := kubeapi.GetpgclustersBySelector(po.kubeClient, &clusterList, selector, "")
 		if err != nil {
 			return "", err
 		}
@@ -98,10 +104,10 @@ func (pr *PGORemote) findInstanceNamespace(instID string) (string, error) {
 			return "", errors.New("cluster for instanceID " + instID + " not found by selector")
 		}
 
-		pr.nsMutex.Lock()
+		po.nsMutex.Lock()
 		ns := clusterList.Items[0].GetNamespace()
-		pr.nsLookup[instID] = ns
-		pr.nsMutex.Unlock()
+		po.nsLookup[instID] = ns
+		po.nsMutex.Unlock()
 
 		return ns, nil
 	}
@@ -110,7 +116,7 @@ func (pr *PGORemote) findInstanceNamespace(instID string) (string, error) {
 // httpClient provides an http client based on the current state of bound
 // apiserver-keys
 // TODO: Poll cert changes and cache client between
-func (pr *PGORemote) httpClient() (*http.Client, error) {
+func (po *PGOperator) httpClient() (*http.Client, error) {
 	caCertPath := "/opt/apiserver-keys/ca.crt"
 	clientCertPath := "/opt/apiserver-keys/client.crt"
 	clientKeyPath := "/opt/apiserver-keys/client.key"
@@ -142,8 +148,8 @@ func (pr *PGORemote) httpClient() (*http.Client, error) {
 	}
 
 	log.Println("setting up httpclient with TLS")
-	log.Printf("API URL: %s\n", pr.remoteURL)
-	log.Printf("API Ver: %s\n", pr.clientVer)
+	log.Printf("API URL: %s\n", po.remoteURL)
+	log.Printf("API Ver: %s\n", po.clientVer)
 	c := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -157,27 +163,31 @@ func (pr *PGORemote) httpClient() (*http.Client, error) {
 }
 
 // instLabel generates the selector used to find the cluster based on instID
-func (pr *PGORemote) instLabel(instID string) string {
-	return pr.instLabelKey + "=" + instID
+func (po *PGOperator) instLabel(instID string) string {
+	return po.instLabelKey + "=" + instID
 }
 
-// BindingUser creates and/or returns binding information for a cluster
-func (pr *PGORemote) BindingUser(instanceID, appID, bindID string) (BasicCred, error) {
-	log.Printf("BindingUser called %s\n", instanceID)
-	hc, err := pr.httpClient()
+// CreateBinding creates and/or returns binding information for a cluster
+func (po *PGOperator) CreateBinding(instanceID, bindID, appID string) (BasicCred, error) {
+	log.Printf("CreateBinding called %s\n", instanceID)
+	log.Printf("Binding: %s\n", bindID)
+	if appID != "" {
+		log.Printf("App ID: %s\n", appID)
+	}
+	hc, err := po.httpClient()
 	if err != nil {
 		return BasicCred{}, err
 	}
 
-	ns, err := pr.findInstanceNamespace(instanceID)
+	ns, err := po.findInstanceNamespace(instanceID)
 	if err != nil {
-		log.Printf("error finding instance in BindingUser: %s\n", err)
+		log.Printf("error finding instance in CreateBinding: %s\n", err)
 		return BasicCred{}, err
 	}
 
 	clusterName := "all"
 	expired := ""
-	response, err := api.ShowUser(hc, clusterName, pr.instLabel(instanceID), expired, &pr.pgoCreds, ns)
+	response, err := api.ShowUser(hc, clusterName, po.instLabel(instanceID), expired, &po.pgoCreds, ns)
 
 	if response.Status.Code != msgs.Ok {
 		m := response.Status.Msg
@@ -215,15 +225,15 @@ func (pr *PGORemote) BindingUser(instanceID, appID, bindID string) (BasicCred, e
 }
 
 // ClusterDetail returns the content provided by the operator's Show Cluster
-func (pr *PGORemote) ClusterDetail(instanceID string) (ClusterDetails, error) {
+func (po *PGOperator) ClusterDetail(instanceID string) (ClusterDetails, error) {
 	log.Printf("ClusterDetail called %s\n", instanceID)
 	noInfo := ClusterDetails{}
-	hc, err := pr.httpClient()
+	hc, err := po.httpClient()
 	if err != nil {
 		return noInfo, err
 	}
 
-	ns, err := pr.findInstanceNamespace(instanceID)
+	ns, err := po.findInstanceNamespace(instanceID)
 	if err != nil {
 		log.Printf("error finding instance in ClusterDetails: %s", err)
 		return noInfo, err
@@ -231,11 +241,11 @@ func (pr *PGORemote) ClusterDetail(instanceID string) (ClusterDetails, error) {
 
 	showClusterRequest := msgs.ShowClusterRequest{
 		Clustername:   "all",
-		Selector:      pr.instLabel(instanceID),
-		ClientVersion: pr.clientVer,
+		Selector:      po.instLabel(instanceID),
+		ClientVersion: po.clientVer,
 		Namespace:     ns,
 	}
-	response, err := api.ShowCluster(hc, &pr.pgoCreds, &showClusterRequest)
+	response, err := api.ShowCluster(hc, &po.pgoCreds, &showClusterRequest)
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
@@ -268,24 +278,24 @@ func (pr *PGORemote) ClusterDetail(instanceID string) (ClusterDetails, error) {
 	return cDetail, nil
 }
 
-// CreateCluster implements the PGORemote interface for creating clusters
-func (pr *PGORemote) CreateCluster(instanceID, name, namespace string) error {
+// CreateCluster implements the PGOperator interface for creating clusters
+func (po *PGOperator) CreateCluster(instanceID, name, namespace string) error {
 	log.Printf("CreateCluster called %s\n", instanceID)
-	hc, err := pr.httpClient()
+	hc, err := po.httpClient()
 	if err != nil {
 		return err
 	}
 
 	r := &msgs.CreateClusterRequest{
-		ClientVersion: pr.clientVer,
+		ClientVersion: po.clientVer,
 		Name:          name,
 		Namespace:     namespace,
 		Series:        1,
-		UserLabels:    pr.instLabel(instanceID),
+		UserLabels:    po.instLabel(instanceID),
 	}
 	log.Println("user label applied to cluster is [" + r.UserLabels + "]")
 
-	response, err := api.CreateCluster(hc, &pr.pgoCreds, r)
+	response, err := api.CreateCluster(hc, &po.pgoCreds, r)
 	if err != nil {
 		log.Println("create cluster error: ", err)
 		return err
@@ -302,23 +312,23 @@ func (pr *PGORemote) CreateCluster(instanceID, name, namespace string) error {
 }
 
 // DeleteBinding deletes existing binding users based on instance and bindID
-func (pr *PGORemote) DeleteBinding(instanceID, bindID string) error {
+func (po *PGOperator) DeleteBinding(instanceID, bindID string) error {
 	// Currently noop
 	return nil
 }
 
-// DeleteCluster implements the PGORemote interface for deleting clusters
+// DeleteCluster implements the PGOperator interface for deleting clusters
 // It also ensures all bindings are deleted prior to attempting to delete
 // the cluster so that a clear error can be returned
-func (pr *PGORemote) DeleteCluster(instanceID string) error {
+func (po *PGOperator) DeleteCluster(instanceID string) error {
 	log.Printf("DeleteCluster called %s\n", instanceID)
-	hc, err := pr.httpClient()
+	hc, err := po.httpClient()
 	if err != nil {
 		return err
 	}
-	selector := pr.instLabel(instanceID)
+	selector := po.instLabel(instanceID)
 
-	ns, err := pr.findInstanceNamespace(instanceID)
+	ns, err := po.findInstanceNamespace(instanceID)
 	if err != nil {
 		log.Printf("error finding instance in DeleteCluster: %s\n", err)
 		return err
@@ -331,12 +341,12 @@ func (pr *PGORemote) DeleteCluster(instanceID string) error {
 	deleteClusterRequest := msgs.DeleteClusterRequest{
 		Clustername:   "all",
 		Selector:      selector,
-		ClientVersion: pr.clientVer,
+		ClientVersion: po.clientVer,
 		Namespace:     ns,
 		DeleteData:    deleteData,
 		DeleteBackups: deleteBackups,
 	}
-	response, err := api.DeleteCluster(hc, &deleteClusterRequest, &pr.pgoCreds)
+	response, err := api.DeleteCluster(hc, &deleteClusterRequest, &po.pgoCreds)
 
 	if response.Status.Code == msgs.Ok {
 		for _, result := range response.Results {
