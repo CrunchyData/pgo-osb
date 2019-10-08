@@ -1,4 +1,4 @@
-package broker
+package bridge
 
 /*
 Copyright 2018 Crunchy Data Solutions, Inc.
@@ -21,9 +21,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/crunchydata/pgo-osb/pgocmd"
+	"github.com/crunchydata/pgo-osb/pkg/broker"
 	osb "github.com/pmorie/go-open-service-broker-client/v2"
-	"github.com/pmorie/osb-broker-lib/pkg/broker"
+	osblib "github.com/pmorie/osb-broker-lib/pkg/broker"
 )
 
 // NewBusinessLogic is a hook that is called with the Options the program is run
@@ -54,7 +54,7 @@ func NewBusinessLogic(o Options) (*BusinessLogic, error) {
 		log.Println("  PGO_USERNAME=" + logic.PGO_USERNAME)
 		log.Println("  PGO_PASSWORD=" + logic.PGO_PASSWORD)
 
-		r, err := pgocmd.NewPGORemote(
+		r, err := broker.NewPGORemote(
 			logic.PGO_APISERVER_URL,
 			logic.PGO_USERNAME,
 			logic.PGO_PASSWORD,
@@ -82,20 +82,20 @@ type BusinessLogic struct {
 	PGO_APISERVER_VERSION string
 	PGO_USERNAME          string
 	PGO_PASSWORD          string
-	Remote                pgocmd.Remote
+	Remote                broker.Remote
 }
 
-var _ broker.Interface = &BusinessLogic{}
+var _ osblib.Interface = &BusinessLogic{}
 
 func truePtr() *bool {
 	b := true
 	return &b
 }
 
-func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogResponse, error) {
+func (b *BusinessLogic) GetCatalog(c *osblib.RequestContext) (*osblib.CatalogResponse, error) {
 
 	log.Println("GetCatalog called")
-	response := &broker.CatalogResponse{}
+	response := &osblib.CatalogResponse{}
 	osbResponse := &osb.CatalogResponse{
 		Services: []osb.Service{
 			{
@@ -147,7 +147,7 @@ func (b *BusinessLogic) GetCatalog(c *broker.RequestContext) (*broker.CatalogRes
 	return response, nil
 }
 
-func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.RequestContext) (*broker.ProvisionResponse, error) {
+func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *osblib.RequestContext) (*osblib.ProvisionResponse, error) {
 	log.Printf("Provision called with params %#v\n", request.Parameters)
 	log.Printf("Provision called with InstanceID %s\n", request.InstanceID)
 	log.Printf("Provision called with ServiceID %s\n", request.ServiceID)
@@ -156,7 +156,7 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 	b.Lock()
 	defer b.Unlock()
 
-	response := broker.ProvisionResponse{}
+	response := osblib.ProvisionResponse{}
 
 	if request.AcceptsIncomplete {
 		response.Async = b.async
@@ -177,14 +177,14 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 	return &response, nil
 }
 
-func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.RequestContext) (*broker.DeprovisionResponse, error) {
+func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *osblib.RequestContext) (*osblib.DeprovisionResponse, error) {
 	log.Printf("Deprovision called request=%#v", request)
 	log.Printf("Deprovision called broker request context=%#v", c)
 
 	b.Lock()
 	defer b.Unlock()
 
-	response := broker.DeprovisionResponse{}
+	response := osblib.DeprovisionResponse{}
 
 	log.Printf("Deprovision instanceID=%s\n", request.InstanceID)
 	err := b.Remote.DeleteCluster(request.InstanceID)
@@ -200,12 +200,12 @@ func (b *BusinessLogic) Deprovision(request *osb.DeprovisionRequest, c *broker.R
 	return &response, nil
 }
 
-func (b *BusinessLogic) LastOperation(request *osb.LastOperationRequest, c *broker.RequestContext) (*broker.LastOperationResponse, error) {
+func (b *BusinessLogic) LastOperation(request *osb.LastOperationRequest, c *osblib.RequestContext) (*osblib.LastOperationResponse, error) {
 	log.Println("LastOperation called")
 	return nil, nil
 }
 
-func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext) (*broker.BindResponse, error) {
+func (b *BusinessLogic) Bind(request *osb.BindRequest, c *osblib.RequestContext) (*osblib.BindResponse, error) {
 	log.Printf("Bind called req=%#v\n", request)
 	log.Printf("Bind called request instanceID=%s\n", request.InstanceID)
 	log.Printf("Bind called broker ctx=%#v\n", c)
@@ -237,7 +237,7 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	if host == "" {
 		host = clusterDetail.ClusterIP
 	}
-	response := broker.BindResponse{
+	response := osblib.BindResponse{
 		BindResponse: osb.BindResponse{
 			Credentials: map[string]interface{}{
 				"username":      bindCreds.Username,
@@ -264,14 +264,14 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext)
 	return &response, nil
 }
 
-func (b *BusinessLogic) Unbind(request *osb.UnbindRequest, c *broker.RequestContext) (*broker.UnbindResponse, error) {
+func (b *BusinessLogic) Unbind(request *osb.UnbindRequest, c *osblib.RequestContext) (*osblib.UnbindResponse, error) {
 	log.Println("Unbind called")
-	return &broker.UnbindResponse{}, nil
+	return &osblib.UnbindResponse{}, nil
 }
 
-func (b *BusinessLogic) Update(request *osb.UpdateInstanceRequest, c *broker.RequestContext) (*broker.UpdateInstanceResponse, error) {
+func (b *BusinessLogic) Update(request *osb.UpdateInstanceRequest, c *osblib.RequestContext) (*osblib.UpdateInstanceResponse, error) {
 	log.Println("Update called")
-	response := broker.UpdateInstanceResponse{}
+	response := osblib.UpdateInstanceResponse{}
 	if request.AcceptsIncomplete {
 		response.Async = b.async
 	}

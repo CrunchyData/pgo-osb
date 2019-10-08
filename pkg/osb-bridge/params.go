@@ -1,4 +1,4 @@
-package broker
+package bridge
 
 /*
 Copyright 2018 Crunchy Data Solutions, Inc.

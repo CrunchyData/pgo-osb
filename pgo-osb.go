@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/crunchydata/pgo-osb/pgocmd"
 	"github.com/crunchydata/pgo-osb/pkg/broker"
+	"github.com/crunchydata/pgo-osb/pkg/osb-bridge"
 	"github.com/crunchydata/postgres-operator/config"
 	"github.com/crunchydata/postgres-operator/util"
 	"github.com/pmorie/osb-broker-lib/pkg/metrics"
@@ -41,7 +41,7 @@ import (
 )
 
 var options struct {
-	broker.Options
+	bridge.Options
 
 	Port                 int
 	Insecure             bool
@@ -64,7 +64,8 @@ func main() {
 	flag.StringVar(&options.TLSKey, "tlsKey", "", "base-64 encoded PEM block to use as the private key matching the TLS certificate.")
 	flag.BoolVar(&options.AuthenticateK8SToken, "authenticate-k8s-token", false, "option to specify if the broker should validate the bearer auth token with kubernetes")
 	flag.StringVar(&options.KubeConfig, "kube-config", "", "specify the kube config path to be used")
-	broker.AddFlags(&options.Options)
+	bridge.AddFlags(&options.Options)
+
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
@@ -103,7 +104,7 @@ func runWithContext(ctx context.Context) error {
 
 	addr := ":" + strconv.Itoa(options.Port)
 
-	businessLogic, err := broker.NewBusinessLogic(options.Options)
+	businessLogic, err := bridge.NewBusinessLogic(options.Options)
 	if err != nil {
 		return err
 	}
@@ -142,7 +143,7 @@ func runWithContext(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	pgocmd.RESTClient = RESTClient
+	broker.RESTClient = RESTClient
 
 	log.Print("Starting broker!")
 
