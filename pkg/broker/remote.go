@@ -1,4 +1,4 @@
-package pgocmd
+package broker
 
 /*
  Copyright 2017-2018 Crunchy Data Solutions, Inc.

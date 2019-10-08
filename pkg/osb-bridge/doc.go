@@ -1,4 +1,4 @@
-// Package broker holds the code that users of the skeleton write for their
+// Package bridge holds the code that users of the skeleton write for their
 // broker. To make a broker, fill out:
 //
 // - The Options type, which holds options for the broker
@@ -7,7 +7,7 @@
 //   business logic
 // - The NewBusinessLogic function, which creates a BusinessLogic from the
 //   Options the program is run with
-package broker // import "github.com/crunchydata/pgo-osb/pkg/broker"
+package bridge // import "github.com/crunchydata/pgo-osb/pkg/osb-bridge"
 
 /*
 Copyright 2018 Crunchy Data Solutions, Inc.
