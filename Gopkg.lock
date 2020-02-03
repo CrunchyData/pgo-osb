@@ -26,7 +26,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:6d08dd7a70b145dbc431eaba5ae670ab63cbf815f15077c352e744ab001d11fa"
+  digest = "1:0b7ba0ce29ead601684346b3b61e60f2f51d40e5a5d3b433ef3411bf88d49e02"
   name = "github.com/crunchydata/postgres-operator"
   packages = [
     "apis/cr/v1",
@@ -34,11 +34,12 @@
     "config",
     "kubeapi",
     "pgo/api",
+    "sshutil",
     "util",
   ]
   pruneopts = "NUT"
-  revision = "cfe5c564208becbdeb67550294196676739f84a3"
-  version = "v4.1.0"
+  revision = "05baa4a4a2cce699cf01e98c15dadae479aeb6aa"
+  version = "v4.2.1"
 
 [[projects]]
   branch = "master"
@@ -408,9 +409,18 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:bbe51412d9915d64ffaa96b51d409e070665efc5194fcf145c4a27d4133107a4"
+  digest = "1:fac0733e55725109a3e76058aa65116e0198fafb4f62f6f1071aeeb55a02561c"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "internal/subtle",
+    "poly1305",
+    "ssh",
+    "ssh/terminal",
+  ]
   pruneopts = "NUT"
   revision = "34f69633bfdcf9db92f698f8487115767eebef81"
 
@@ -429,9 +439,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3180e0b13b191cb6905e130304a37ad632287bc5e0031eb93b18ff957eec3ffc"
+  digest = "1:e5dac3fcdf91d16313853a26b759b3b222722082bb5cb16f501075988f063968"
   name = "golang.org/x/sys"
   packages = [
+    "cpu",
     "unix",
     "windows",
   ]

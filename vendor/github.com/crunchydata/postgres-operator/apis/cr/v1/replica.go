@@ -22,8 +22,9 @@ import (
 // PgreplicaResourcePlural ..
 const PgreplicaResourcePlural = "pgreplicas"
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // Pgreplica ..
+// swagger:ignore
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type Pgreplica struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
@@ -32,6 +33,7 @@ type Pgreplica struct {
 }
 
 // PgreplicaSpec ...
+// swagger:ignore
 type PgreplicaSpec struct {
 	Namespace          string               `json:"namespace"`
 	Name               string               `json:"name"`
@@ -42,8 +44,9 @@ type PgreplicaSpec struct {
 	UserLabels         map[string]string    `json:"userlabels"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // PgreplicaList ...
+// swagger:ignore
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type PgreplicaList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
@@ -52,17 +55,23 @@ type PgreplicaList struct {
 }
 
 // PgreplicaStatus ...
+// swagger:ignore
 type PgreplicaStatus struct {
 	State   PgreplicaState `json:"state,omitempty"`
 	Message string         `json:"message,omitempty"`
 }
 
 // PgreplicaState ...
+// swagger:ignore
 type PgreplicaState string
 
 const (
 	// PgreplicaStateCreated ...
 	PgreplicaStateCreated PgreplicaState = "pgreplica Created"
+	// PgreplicaStatePending ...
+	PgreplicaStatePendingInit PgreplicaState = "pgreplica Pending init"
+	// PgreplicaStatePendingRestore ...
+	PgreplicaStatePendingRestore PgreplicaState = "pgreplica Pending restore"
 	// PgreplicaStateProcessed ...
 	PgreplicaStateProcessed PgreplicaState = "pgreplica Processed"
 )

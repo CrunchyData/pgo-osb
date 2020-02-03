@@ -17,22 +17,28 @@ limitations under the License.
 
 import ()
 
+// NodeInfo ...
+// swagger:model
 type NodeInfo struct {
 	Name   string
 	Status string
 	Labels map[string]string
 }
+
+// KeyValue ...
+// swagger:model
 type KeyValue struct {
 	Key   string
 	Value int
 }
 
+// StatusDetail ...
 // this aggregated status comes from the pgo-status container
 // by means of a volume mounted json blob it generates
+// swagger:model
 type StatusDetail struct {
 	OperatorStartTime string
 	NumDatabases      int
-	NumBackups        int
 	NumClaims         int
 	VolumeCap         string
 	DbTags            map[string]int
@@ -42,6 +48,7 @@ type StatusDetail struct {
 }
 
 // ShowClusterResponse ...
+// swagger:model
 type StatusResponse struct {
 	Result StatusDetail
 	Status

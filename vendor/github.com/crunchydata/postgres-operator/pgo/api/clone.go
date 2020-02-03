@@ -23,50 +23,14 @@ import (
 	"net/http"
 )
 
-func CreatePgpool(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, request *msgs.CreatePgpoolRequest) (msgs.CreatePgpoolResponse, error) {
+func Clone(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, request *msgs.CloneRequest) (msgs.CloneResponse, error) {
 
-	var response msgs.CreatePgpoolResponse
-
-	jsonValue, _ := json.Marshal(request)
-	url := SessionCredentials.APIServerURL + "/pgpool"
-	log.Debugf("createPgpool called...[%s]", url)
-
-	action := "POST"
-	req, err := http.NewRequest(action, url, bytes.NewBuffer(jsonValue))
-	if err != nil {
-		return response, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(SessionCredentials.Username, SessionCredentials.Password)
-
-	resp, err := httpclient.Do(req)
-	if err != nil {
-		return response, err
-	}
-	defer resp.Body.Close()
-
-	log.Debugf("%v", resp)
-	err = StatusCheck(resp)
-	if err != nil {
-		return response, err
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Printf("%v\n", resp.Body)
-		log.Println(err)
-		return response, err
-	}
-
-	return response, err
-}
-
-func DeletePgpool(httpclient *http.Client, SessionCredentials *msgs.BasicAuthCredentials, request *msgs.DeletePgpoolRequest) (msgs.DeletePgpoolResponse, error) {
-
-	var response msgs.DeletePgpoolResponse
+	var response msgs.CloneResponse
 
 	jsonValue, _ := json.Marshal(request)
-	url := SessionCredentials.APIServerURL + "/pgpooldelete"
-	log.Debugf("deletePgpool called...[%s]", url)
+	url := SessionCredentials.APIServerURL + "/clone"
+
+	log.Debugf("clone called [%s]", url)
 
 	action := "POST"
 	req, err := http.NewRequest(action, url, bytes.NewBuffer(jsonValue))

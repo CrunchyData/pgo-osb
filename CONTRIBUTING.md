@@ -156,20 +156,20 @@ candidates **should not be used in production environments**.
 
 Alpha is the early stage of a release cycle and is typically made to test the
 mechanics of an upcoming release. These should be considered relatively
-unstable. The format for an alpha release tag is `v4.2.0-alpha.1`, which in this
+unstable. The format for an alpha release tag is `v4.2.1-alpha.1`, which in this
 case indicates it is the first alpha release for 4.2.
 
 Beta occurs during the later stage of a release cycle. At this point, the
 release should be considered feature complete and the beta is used to
 distribute, test, and collect feedback on the upcoming release. The betas should
 be considered unstable, but as mentioned feature complete. The format for an
-beta release tag is `v4.2.0-beta.1`, which in this case indicates it is the
+beta release tag is `v4.2.1-beta.1`, which in this case indicates it is the
 first beta release for 4.2.
 
 Release candidates (RCs) occur just before a release. A release candidate should
 be considered stable, and is typically used for a final round of bug checking
 and testing. Multiple release candidates can occur in the event of serious bugs.
-The format for a release candidate tag is `v4.2.0-rc.1`, which in this
+The format for a release candidate tag is `v4.2.1-rc.1`, which in this
 case indicates it is the first release candidate for 4.2.
 
 **After a major or minor release, no alpha, beta, or release candidate releases

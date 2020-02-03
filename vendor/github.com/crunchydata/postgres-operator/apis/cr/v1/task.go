@@ -26,9 +26,6 @@ const PgtaskAddPgbouncer = "add-pgbouncer"
 const PgtaskDeletePgbouncer = "delete-pgbouncer"
 const PgtaskReconfigurePgbouncer = "reconfigure-pgbouncer"
 const PgtaskUpdatePgbouncerAuths = "update-pgbouncer-auths"
-const PgtaskAddPgpool = "add-pgpool"
-const PgtaskDeletePgpool = "delete-pgpool"
-const PgtaskReconfigurePgpool = "reconfigure-pgpool"
 const PgtaskDeleteBackups = "delete-backups"
 const PgtaskDeleteData = "delete-data"
 const PgtaskFailover = "failover"
@@ -37,6 +34,7 @@ const PgtaskAddPolicies = "addpolicies"
 const PgtaskMinorUpgrade = "minorupgradecluster"
 
 const PgtaskWorkflow = "workflow"
+const PgtaskWorkflowCloneType = "cloneworkflow"
 const PgtaskWorkflowCreateClusterType = "createcluster"
 const PgtaskWorkflowCreateBenchmarkType = "createbenchmark"
 const PgtaskWorkflowBackrestRestoreType = "pgbackrestrestore"
@@ -49,6 +47,11 @@ const PgtaskWorkflowID = "workflowid"
 const PgtaskWorkflowBackrestRestorePVCCreatedStatus = "restored PVC created"
 const PgtaskWorkflowBackrestRestorePrimaryCreatedStatus = "restored Primary created"
 const PgtaskWorkflowBackrestRestoreJobCreatedStatus = "restore job created"
+
+const PgtaskWorkflowCloneCreatePVC = "clone 1.1: create pvc"
+const PgtaskWorkflowCloneSyncRepo = "clone 1.2: sync pgbackrest repo"
+const PgtaskWorkflowCloneRestoreBackup = "clone 2: restoring backup"
+const PgtaskWorkflowCloneClusterCreate = "clone 3: cluster creating"
 
 const PgtaskWorkflowPgbasebackupRestorePVCCreatedStatus = "restored PVC created"
 const PgtaskWorkflowPgbasebackupRestorePrimaryCreatedStatus = "restored Primary created"
@@ -69,7 +72,25 @@ const PgtaskpgBasebackupRestore = "pgbasebackuprestore"
 
 const PgtaskBenchmark = "benchmark"
 
+const PgtaskCloneStep1 = "clone-step1" // performs a pgBackRest repo sync
+const PgtaskCloneStep2 = "clone-step2" // performs a pgBackRest restore
+const PgtaskCloneStep3 = "clone-step3" // creates the Pgcluster
+
+// Defines the types of pgBackRest backups that are taken throughout a clusters
+// lifecycle
+const (
+	// this type of backup is taken following a failover event
+	BackupTypeFailover string = "failover"
+	// this type of backup is taken when a new cluster is being bootstrapped
+	BackupTypeBootstrap string = "bootstrap"
+)
+
+// BackrestStorageTypes defines the valid types of storage that can be utilized
+// with pgBackRest
+var BackrestStorageTypes = []string{"local", "s3"}
+
 // PgtaskSpec ...
+// swagger:ignore
 type PgtaskSpec struct {
 	Namespace   string            `json:"namespace"`
 	Name        string            `json:"name"`
@@ -79,8 +100,9 @@ type PgtaskSpec struct {
 	Parameters  map[string]string `json:"parameters"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // Pgtask ...
+// swagger:ignore
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type Pgtask struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
@@ -89,8 +111,9 @@ type Pgtask struct {
 	Status PgtaskStatus `json:"status,omitempty"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // PgtaskList ...
+// swagger:ignore
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type PgtaskList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
@@ -99,12 +122,14 @@ type PgtaskList struct {
 }
 
 // PgtaskStatus ...
+// swagger:ignore
 type PgtaskStatus struct {
 	State   PgtaskState `json:"state,omitempty"`
 	Message string      `json:"message,omitempty"`
 }
 
 // PgtaskState ...
+// swagger:ignore
 type PgtaskState string
 
 const (

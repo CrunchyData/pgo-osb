@@ -23,9 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os/exec"
 	"strconv"
-	"strings"
 	"time"
 
 	crv1 "github.com/crunchydata/postgres-operator/apis/cr/v1"
@@ -134,7 +132,7 @@ func DrainDeployment(clientset *kubernetes.Clientset, name string, namespace str
 	}
 	log.Debug(string(patchBytes))
 
-	_, err = clientset.ExtensionsV1beta1().Deployments(namespace).Patch(name, types.JSONPatchType, patchBytes, "")
+	_, err = clientset.AppsV1().Deployments(namespace).Patch(name, types.JSONPatchType, patchBytes, "")
 	if err != nil {
 		log.Error("error patching deployment " + err.Error())
 	}
@@ -198,7 +196,7 @@ func ScaleDeployment(clientset *kubernetes.Clientset, deploymentName, namespace 
 	}
 	log.Debug(string(patchBytes))
 
-	_, err = clientset.ExtensionsV1beta1().Deployments(namespace).Patch(deploymentName, types.JSONPatchType, patchBytes)
+	_, err = clientset.AppsV1().Deployments(namespace).Patch(deploymentName, types.JSONPatchType, patchBytes)
 	if err != nil {
 		log.Error("error creating primary Deployment " + err.Error())
 		return err
@@ -260,36 +258,6 @@ func PatchClusterCRD(restclient *rest.RESTClient, labelMap map[string]string, ol
 
 	return err6
 
-}
-
-// RunPsql runs a psql statement
-func RunPsql(password string, hostip string, sqlstring string) error {
-
-	log.Debugf("RunPsql hostip=[%s] sql=[%s]", hostip, sqlstring)
-	cmd := exec.Command("runpsql.sh", password, hostip)
-
-	cmd.Stdin = strings.NewReader(sqlstring)
-
-	var out, stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-	if err != nil {
-		log.Error("error in run cmd " + err.Error())
-		log.Error(out.String())
-		log.Error(stderr.String())
-		return err
-	}
-
-	if stderr.String() != "" {
-		log.Errorf("stderror in run cmd %s", stderr.String())
-		log.Error(out.String())
-		return errors.New("SQL error: " + stderr.String())
-	}
-
-	log.Debugf("runpsql output [%s]", out.String()[0:20])
-	return err
 }
 
 // GetSecretPassword ...
@@ -373,4 +341,17 @@ func NewClient(cfg *rest.Config) (*rest.RESTClient, *runtime.Scheme, error) {
 	}
 
 	return client, scheme, nil
+}
+
+// IsStringOneOf tests to see string testVal is included in the list
+// of strings provided using acceptedVals
+func IsStringOneOf(testVal string, acceptedVals ...string) bool {
+	isOneOf := false
+	for _, val := range acceptedVals {
+		if testVal == val {
+			isOneOf = true
+			break
+		}
+	}
+	return isOneOf
 }
