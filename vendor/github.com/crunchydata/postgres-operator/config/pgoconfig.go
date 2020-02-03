@@ -37,6 +37,10 @@ const CustomConfigMapName = "pgo-config"
 const DefaultConfigsPath = "/default-pgo-config/"
 const CustomConfigsPath = "/pgo-config/"
 
+var PgoDefaultServiceAccountTemplate *template.Template
+
+const PGODefaultServiceAccountPath = "pgo-default-sa.json"
+
 var PgoTargetRoleBindingTemplate *template.Template
 
 const PGOTargetRoleBindingPath = "pgo-target-role-binding.json"
@@ -61,6 +65,18 @@ var PgoTargetRoleTemplate *template.Template
 
 const PGOTargetRolePath = "pgo-target-role.json"
 
+var PgoPgServiceAccountTemplate *template.Template
+
+const PGOPgServiceAccountPath = "pgo-pg-sa.json"
+
+var PgoPgRoleTemplate *template.Template
+
+const PGOPgRolePath = "pgo-pg-role.json"
+
+var PgoPgRoleBindingTemplate *template.Template
+
+const PGOPgRoleBindingPath = "pgo-pg-role-binding.json"
+
 var BenchmarkJobTemplate *template.Template
 
 const benchmarkJobPath = "pgbench-job.json"
@@ -81,13 +97,13 @@ var LoadTemplate *template.Template
 
 const loadTemplatePath = "pgo.load-template.json"
 
-var LspvcTemplate *template.Template
-
-const lspvcTemplatePath = "pgo.lspvc-template.json"
-
 var AffinityTemplate *template.Template
 
 const affinityTemplatePath = "affinity.json"
+
+var PodAntiAffinityTemplate *template.Template
+
+const podAntiAffinityTemplatePath = "pod-anti-affinity.json"
 
 var PgoBackrestRepoServiceTemplate *template.Template
 
@@ -116,22 +132,6 @@ const jobPath = "backup-job.json"
 var PgBasebackupRestoreJobTemplate *template.Template
 
 const pgBasebackupRestoreJobTemplatePath = "pgbasebackup-restore-job.json"
-
-var PgpoolTemplate *template.Template
-
-const pgpoolTemplatePath = "pgpool-template.json"
-
-var PgpoolConfTemplate *template.Template
-
-const pgpoolConfTemplatePath = "pgpool.conf"
-
-var PgpoolPasswdTemplate *template.Template
-
-const pgpoolPasswdTemplatePath = "pool_passwd"
-
-var PgpoolHBATemplate *template.Template
-
-const pgpoolHBATemplatePath = "pool_hba.conf"
 
 var PgbouncerTemplate *template.Template
 
@@ -193,35 +193,43 @@ var DeploymentTemplate *template.Template
 
 const deploymentTemplatePath = "cluster-deployment.json"
 
+var PostgresHaTemplate *template.Template
+
+const PostgresHaTemplatePath = "postgres-ha.yaml"
+
 type ClusterStruct struct {
-	CCPImagePrefix          string `yaml:"CCPImagePrefix"`
-	CCPImageTag             string `yaml:"CCPImageTag"`
-	PrimaryNodeLabel        string `yaml:"PrimaryNodeLabel"`
-	ReplicaNodeLabel        string `yaml:"ReplicaNodeLabel"`
-	Policies                string `yaml:"Policies"`
-	LogStatement            string `yaml:"LogStatement"`
-	LogMinDurationStatement string `yaml:"LogMinDurationStatement"`
-	Metrics                 bool   `yaml:"Metrics"`
-	Badger                  bool   `yaml:"Badger"`
-	Port                    string `yaml:"Port"`
-	PGBadgerPort            string `yaml:"PGBadgerPort"`
-	ExporterPort            string `yaml:"ExporterPort"`
-	User                    string `yaml:"User"`
-	ArchiveTimeout          string `yaml:"ArchiveTimeout"`
-	Database                string `yaml:"Database"`
-	PasswordAgeDays         string `yaml:"PasswordAgeDays"`
-	PasswordLength          string `yaml:"PasswordLength"`
-	Strategy                string `yaml:"Strategy"`
-	Replicas                string `yaml:"Replicas"`
-	ServiceType             string `yaml:"ServiceType"`
-	BackrestPort            int    `yaml:"BackrestPort"`
-	Backrest                bool   `yaml:"Backrest"`
-	BackrestS3Bucket        string `yaml:"BackrestS3Bucket"`
-	BackrestS3Endpoint      string `yaml:"BackrestS3Endpoint"`
-	BackrestS3Region        string `yaml:"BackrestS3Region"`
-	Autofail                bool   `yaml:"Autofail"`
-	AutofailReplaceReplica  bool   `yaml:"AutofailReplaceReplica"`
-	PgmonitorPassword       string `yaml:"PgmonitorPassword"`
+	CCPImagePrefix                string `yaml:"CCPImagePrefix"`
+	CCPImageTag                   string `yaml:"CCPImageTag"`
+	PrimaryNodeLabel              string `yaml:"PrimaryNodeLabel"`
+	ReplicaNodeLabel              string `yaml:"ReplicaNodeLabel"`
+	Policies                      string `yaml:"Policies"`
+	LogStatement                  string `yaml:"LogStatement"`
+	LogMinDurationStatement       string `yaml:"LogMinDurationStatement"`
+	Metrics                       bool   `yaml:"Metrics"`
+	Badger                        bool   `yaml:"Badger"`
+	Port                          string `yaml:"Port"`
+	PGBadgerPort                  string `yaml:"PGBadgerPort"`
+	ExporterPort                  string `yaml:"ExporterPort"`
+	User                          string `yaml:"User"`
+	ArchiveTimeout                string `yaml:"ArchiveTimeout"`
+	Database                      string `yaml:"Database"`
+	PasswordAgeDays               string `yaml:"PasswordAgeDays"`
+	PasswordLength                string `yaml:"PasswordLength"`
+	Strategy                      string `yaml:"Strategy"`
+	Replicas                      string `yaml:"Replicas"`
+	ServiceType                   string `yaml:"ServiceType"`
+	BackrestPort                  int    `yaml:"BackrestPort"`
+	Backrest                      bool   `yaml:"Backrest"`
+	BackrestS3Bucket              string `yaml:"BackrestS3Bucket"`
+	BackrestS3Endpoint            string `yaml:"BackrestS3Endpoint"`
+	BackrestS3Region              string `yaml:"BackrestS3Region"`
+	DisableAutofail               bool   `yaml:"DisableAutofail"`
+	AutofailReplaceReplica        bool   `yaml:"AutofailReplaceReplica"`
+	PgmonitorPassword             string `yaml:"PgmonitorPassword"`
+	EnableCrunchyadm              bool   `yaml:"EnableCrunchyadm"`
+	DisableReplicaStartFailReinit bool   `yaml:"DisableReplicaStartFailReinit"`
+	PodAntiAffinity               string `yaml:"PodAntiAffinity"`
+	SyncReplication               bool   `yaml:"SyncReplication"`
 }
 
 type StorageStruct struct {
@@ -262,11 +270,9 @@ type PgoConfig struct {
 	Storage                   map[string]StorageStruct            `yaml:"Storage"`
 	DefaultContainerResources string                              `yaml:"DefaultContainerResources"`
 	DefaultLoadResources      string                              `yaml:"DefaultLoadResources"`
-	DefaultLspvcResources     string                              `yaml:"DefaultLspvcResources"`
 	DefaultRmdataResources    string                              `yaml:"DefaultRmdataResources"`
 	DefaultBackupResources    string                              `yaml:"DefaultBackupResources"`
 	DefaultBadgerResources    string                              `yaml:"DefaultBadgerResources"`
-	DefaultPgpoolResources    string                              `yaml:"DefaultPgpoolResources"`
 	DefaultPgbouncerResources string                              `yaml:"DefaultPgbouncerResources"`
 }
 
@@ -284,6 +290,7 @@ const DEFAULT_BACKREST_PORT = 2022
 const DEFAULT_PGBADGER_PORT = "10000"
 const DEFAULT_EXPORTER_PORT = "9187"
 const DEFAULT_POSTGRES_PORT = "5432"
+const DEFAULT_PATRONI_PORT = "8009"
 const DEFAULT_BACKREST_SSH_KEY_BITS = 2048
 
 func (c *PgoConfig) Validate() error {
@@ -404,12 +411,6 @@ func (c *PgoConfig) Validate() error {
 			return errors.New(errPrefix + "DefaultContainerResources setting invalid")
 		}
 	}
-	if c.DefaultLspvcResources != "" {
-		_, ok = c.ContainerResources[c.DefaultLspvcResources]
-		if !ok {
-			return errors.New(errPrefix + "DefaultLspvcResources setting invalid")
-		}
-	}
 	if c.DefaultLoadResources != "" {
 		_, ok = c.ContainerResources[c.DefaultLoadResources]
 		if !ok {
@@ -432,12 +433,6 @@ func (c *PgoConfig) Validate() error {
 		_, ok = c.ContainerResources[c.DefaultBadgerResources]
 		if !ok {
 			return errors.New(errPrefix + "DefaultBadgerResources setting invalid")
-		}
-	}
-	if c.DefaultPgpoolResources != "" {
-		_, ok = c.ContainerResources[c.DefaultPgpoolResources]
-		if !ok {
-			return errors.New(errPrefix + "DefaultPgpoolResources setting invalid")
 		}
 	}
 	if c.DefaultPgbouncerResources != "" {
@@ -490,6 +485,13 @@ func (c *PgoConfig) Validate() error {
 			return errors.New(errPrefix + msg)
 		}
 	}
+
+	// if provided, ensure that the type of pod anti-affinity specified is valid
+	podAntiAffinityType := crv1.PodAntiAffinityType(c.Cluster.PodAntiAffinity)
+	if err := podAntiAffinityType.Validate(); podAntiAffinityType != "" && err != nil {
+		return errors.New(errPrefix + "Invalid value provided for Cluster.PodAntiAffinityType")
+	}
+
 	return err
 }
 
@@ -611,6 +613,10 @@ func (c *PgoConfig) GetConfig(clientset *kubernetes.Clientset, namespace string)
 	c.CheckEnv()
 
 	//load up all the templates
+	PgoDefaultServiceAccountTemplate, err = c.LoadTemplate(cMap, rootPath, PGODefaultServiceAccountPath)
+	if err != nil {
+		return err
+	}
 	PgoBackrestServiceAccountTemplate, err = c.LoadTemplate(cMap, rootPath, PGOBackrestServiceAccountPath)
 	if err != nil {
 		return err
@@ -632,6 +638,18 @@ func (c *PgoConfig) GetConfig(clientset *kubernetes.Clientset, namespace string)
 		return err
 	}
 	PgoTargetRoleTemplate, err = c.LoadTemplate(cMap, rootPath, PGOTargetRolePath)
+	if err != nil {
+		return err
+	}
+	PgoPgServiceAccountTemplate, err = c.LoadTemplate(cMap, rootPath, PGOPgServiceAccountPath)
+	if err != nil {
+		return err
+	}
+	PgoPgRoleTemplate, err = c.LoadTemplate(cMap, rootPath, PGOPgRolePath)
+	if err != nil {
+		return err
+	}
+	PgoPgRoleBindingTemplate, err = c.LoadTemplate(cMap, rootPath, PGOPgRoleBindingPath)
 	if err != nil {
 		return err
 	}
@@ -657,11 +675,6 @@ func (c *PgoConfig) GetConfig(clientset *kubernetes.Clientset, namespace string)
 	}
 
 	LoadTemplate, err = c.LoadTemplate(cMap, rootPath, loadTemplatePath)
-	if err != nil {
-		return err
-	}
-
-	LspvcTemplate, err = c.LoadTemplate(cMap, rootPath, lspvcTemplatePath)
 	if err != nil {
 		return err
 	}
@@ -702,26 +715,6 @@ func (c *PgoConfig) GetConfig(clientset *kubernetes.Clientset, namespace string)
 	}
 
 	PgBasebackupRestoreJobTemplate, err = c.LoadTemplate(cMap, rootPath, pgBasebackupRestoreJobTemplatePath)
-	if err != nil {
-		return err
-	}
-
-	PgpoolTemplate, err = c.LoadTemplate(cMap, rootPath, pgpoolTemplatePath)
-	if err != nil {
-		return err
-	}
-
-	PgpoolConfTemplate, err = c.LoadTemplate(cMap, rootPath, pgpoolConfTemplatePath)
-	if err != nil {
-		return err
-	}
-
-	PgpoolPasswdTemplate, err = c.LoadTemplate(cMap, rootPath, pgpoolPasswdTemplatePath)
-	if err != nil {
-		return err
-	}
-
-	PgpoolHBATemplate, err = c.LoadTemplate(cMap, rootPath, pgpoolHBATemplatePath)
 	if err != nil {
 		return err
 	}
@@ -791,6 +784,11 @@ func (c *PgoConfig) GetConfig(clientset *kubernetes.Clientset, namespace string)
 		return err
 	}
 
+	PodAntiAffinityTemplate, err = c.LoadTemplate(cMap, rootPath, podAntiAffinityTemplatePath)
+	if err != nil {
+		return err
+	}
+
 	CollectTemplate, err = c.LoadTemplate(cMap, rootPath, collectTemplatePath)
 	if err != nil {
 		return err
@@ -802,7 +800,16 @@ func (c *PgoConfig) GetConfig(clientset *kubernetes.Clientset, namespace string)
 	}
 
 	DeploymentTemplate, err = c.LoadTemplate(cMap, rootPath, deploymentTemplatePath)
-	return err
+	if err != nil {
+		return err
+	}
+
+	PostgresHaTemplate, err = c.LoadTemplate(cMap, rootPath, PostgresHaTemplatePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getRootPath(clientset *kubernetes.Clientset, namespace string) (*v1.ConfigMap, string) {
@@ -820,27 +827,51 @@ func getRootPath(clientset *kubernetes.Clientset, namespace string) (*v1.ConfigM
 // LoadTemplate will load a JSON template from a path
 func (c *PgoConfig) LoadTemplate(cMap *v1.ConfigMap, rootPath, path string) (*template.Template, error) {
 	var value string
+	var err error
 
+	// Determine if there exists a configmap entry for the template file.
 	if cMap != nil {
+		// Get the data that is stored in the configmap
 		value = cMap.Data[path]
-		if value == "" {
-			errMsg := fmt.Sprintf("%s path not found in ConfigMap", path)
-			return nil, errors.New(errMsg)
-		}
-	} else {
-		fullPath := rootPath + path
-		log.Debugf("loading path [%s]", fullPath)
-		buf, err := ioutil.ReadFile(fullPath)
-		if err != nil {
-			log.Errorf("error: could not read %s", fullPath)
-			log.Error(err)
-			return nil, err
-		}
-		value = string(buf)
 	}
 
+	// if the configmap does not exist, or there is no data in the configmap for
+	// this particular configuration template, attempt to load the template from
+	// the default configuration
+	if cMap == nil || value == "" {
+		value, err = c.DefaultTemplate(path)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// if we have a value for the templated file, return
 	return template.Must(template.New(path).Parse(value)), nil
 
+}
+
+// DefaultTemplate attempts to load a default configuration template file
+func (c *PgoConfig) DefaultTemplate(path string) (string, error) {
+	// set the lookup value for the file path based on the default configuration
+	// path and the template file requested to be loaded
+	fullPath := DefaultConfigsPath + path
+
+	log.Debugf("No entry in cmap loading default path [%s]", fullPath)
+
+	// read in the file from the default path
+	buf, err := ioutil.ReadFile(fullPath)
+
+	if err != nil {
+		log.Errorf("error: could not read %s", fullPath)
+		log.Error(err)
+		return "", err
+	}
+
+	// extract the value of the default configuration file and return
+	value := string(buf)
+
+	return value, nil
 }
 
 func (c *PgoConfig) SetDefaultStorageClass(clientset *kubernetes.Clientset) error {

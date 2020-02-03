@@ -47,7 +47,7 @@
 
 [[constraint]]
   name = "github.com/crunchydata/postgres-operator"
-  version = "v4.1.0"
+  version = "v4.2.1"
 
 [[override]]
 name = "k8s.io/apimachinery"

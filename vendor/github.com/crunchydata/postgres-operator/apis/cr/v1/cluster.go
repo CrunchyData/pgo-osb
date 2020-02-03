@@ -16,14 +16,18 @@ package v1
 */
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PgclusterResourcePlural ..
 const PgclusterResourcePlural = "pgclusters"
 
+// Pgcluster is the CRD that defines a Crunchy PG Cluster
+//
+// swagger:ignore Pgcluster
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// Pgcluster ..
 type Pgcluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
@@ -31,7 +35,8 @@ type Pgcluster struct {
 	Status            PgclusterStatus `json:"status,omitempty"`
 }
 
-// PgclusterSpec ...
+// PgclusterSpec is the CRD that defines a Crunchy PG Cluster Spec
+// swagger:ignore
 type PgclusterSpec struct {
 	Namespace          string               `json:"namespace"`
 	Name               string               `json:"name"`
@@ -62,10 +67,16 @@ type PgclusterSpec struct {
 	PswLastUpdate      string               `json:"pswlastupdate"`
 	CustomConfig       string               `json:"customconfig"`
 	UserLabels         map[string]string    `json:"userlabels"`
+	PodAntiAffinity    string               `json:"podPodAntiAffinity"`
+	SyncReplication    *bool                `json:"syncReplication"`
+	BackrestS3Bucket   string               `json:"backrestS3Bucket"`
+	BackrestS3Region   string               `json:"backrestS3Region"`
+	BackrestS3Endpoint string               `json:"backrestS3Endpoint"`
 }
 
+// PgclusterList is the CRD that defines a Crunchy PG Cluster List
+// swagger:ignore
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// PgclusterList ...
 type PgclusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
@@ -73,18 +84,57 @@ type PgclusterList struct {
 	Items []Pgcluster `json:"items"`
 }
 
-// PgclusterStatus ...
+// PgclusterStatus is the CRD that defines PG Cluster Status
+// swagger:ignore
 type PgclusterStatus struct {
 	State   PgclusterState `json:"state,omitempty"`
 	Message string         `json:"message,omitempty"`
 }
 
-// PgclusterState ...
+// PgclusterState is the crd that defines PG Cluster Stage
+// swagger:ignore
 type PgclusterState string
+
+// PodAntiAffinityType defines the different types of type of anti-affinity rules applied to pg
+// clusters when utilizing the default pod anti-affinity rules provided by the PostgreSQL Operator,
+// which are enabled for a new pg cluster by default.  Valid Values include "required" for
+// requiredDuringSchedulingIgnoredDuringExecution anti-affinity, "preferred" for
+// preferredDuringSchedulingIgnoredDuringExecution anti-affinity, and "disabled" to disable the
+// default pod anti-affinity rules for the pg cluster all together.
+type PodAntiAffinityType string
 
 const (
 	// PgclusterStateCreated ...
 	PgclusterStateCreated PgclusterState = "pgcluster Created"
 	// PgclusterStateProcessed ...
 	PgclusterStateProcessed PgclusterState = "pgcluster Processed"
+	// PgclusterStateInitialized ...
+	PgclusterStateInitialized PgclusterState = "pgcluster Initialized"
+	// PgclusterStateRestore ...
+	PgclusterStateRestore PgclusterState = "pgcluster Restoring"
+
+	// PodAntiAffinityRequired results in requiredDuringSchedulingIgnoredDuringExecution for any
+	// default pod anti-affinity rules applied to pg custers
+	PodAntiAffinityRequired PodAntiAffinityType = "required"
+
+	// PodAntiAffinityPreffered results in preferredDuringSchedulingIgnoredDuringExecution for any
+	// default pod anti-affinity rules applied to pg custers
+	PodAntiAffinityPreffered PodAntiAffinityType = "preferred"
+
+	// PodAntiAffinityDisabled disables any default pod anti-affinity rules applied to pg custers
+	PodAntiAffinityDisabled PodAntiAffinityType = "disabled"
 )
+
+// ValidatePodAntiAffinityType is responsible for validating whether or not the type of pod
+// anti-affinity specified is valid
+func (p PodAntiAffinityType) Validate() error {
+	switch p {
+	case
+		PodAntiAffinityRequired,
+		PodAntiAffinityPreffered,
+		PodAntiAffinityDisabled:
+		return nil
+	}
+	return fmt.Errorf("Invalid pod anti-affinity type.  Valid values are '%s', '%s' or '%s'",
+		PodAntiAffinityRequired, PodAntiAffinityPreffered, PodAntiAffinityDisabled)
+}

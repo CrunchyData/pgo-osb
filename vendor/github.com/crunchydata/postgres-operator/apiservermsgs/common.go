@@ -17,18 +17,23 @@ limitations under the License.
 
 import ()
 
-const PGO_VERSION = "4.1.0"
+const PGO_VERSION = "4.2.1"
 
 // Ok status
 const Ok = "ok"
 const Error = "error"
 
 // Status ...
+// swagger:model Status
 type Status struct {
+	// status code
 	Code string
-	Msg  string
+	// status message
+	Msg string
 }
 
+// BasicAuthCredentials ...
+// swagger:model BasicAuthCredentials
 type BasicAuthCredentials struct {
 	Username     string
 	Password     string

@@ -16,80 +16,68 @@ package util
 */
 
 import (
-	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
-	crv1 "github.com/crunchydata/postgres-operator/apis/cr/v1"
-	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
+	"regexp"
+
 	"github.com/crunchydata/postgres-operator/config"
 	"github.com/crunchydata/postgres-operator/kubeapi"
+
 	_ "github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
-	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
+// InstanceReplicationInfo is the user friendly information for the current
+// status of key replication metrics for a PostgreSQL instance
+type InstanceReplicationInfo struct {
+	Name           string
+	Node           string
+	ReplicationLag int
+	Status         string
+	Timeline       int
+}
+
+type ReplicationStatusRequest struct {
+	RESTConfig  *rest.Config
+	Clientset   *kubernetes.Clientset
+	Namespace   string
+	ClusterName string
+}
+
+type ReplicationStatusResponse struct {
+	Instances []InstanceReplicationInfo
+}
+
+// instanceReplicationInfoJSON is the information returned from the request to
+// the Patroni REST endpoint for info on the replication status of all the
+// replicas
+type instanceReplicationInfoJSON struct {
+	PodName        string `json:"Member"`
+	Type           string `json:"Role"`
+	ReplicationLag int    `json:"Lag in MB"`
+	State          string
+	Timeline       int `json:"TL"`
+}
+
 const (
-	replInfoQueryFormat = "SELECT %s(%s(), '0/0')::bigint, %s(%s(), '0/0')::bigint"
-
-	recvV9         = "pg_last_xlog_receive_location"
-	replayV9       = "pg_last_xlog_replay_location"
-	locationDiffV9 = "pg_xlog_location_diff"
-
-	recvV10         = "pg_last_wal_receive_lsn"
-	replayV10       = "pg_last_wal_replay_lsn"
-	locationDiffV10 = "pg_wal_lsn_diff"
+	// instanceReplicationInfoTypePrimary is the label used by Patroni to indicate that an instance
+	// is indeed a primary PostgreSQL instance
+	instanceReplicationInfoTypePrimary = "Leader"
+	// pgPodNamePattern pattern is a pattern used by regexp to look up the
+	// name of the pod
+	pgPodNamePattern = "%s-[0-9a-z]{10}-[0-9a-z]{5}"
 )
 
-type ReplicationInfo struct {
-	ReceiveLocation uint64
-	ReplayLocation  uint64
-	Node            string
-	DeploymentName  string
-}
-
-// GetBestTarget
-func GetBestTarget(clientset *kubernetes.Clientset, clusterName, namespace string) (*v1.Pod, *appsv1.Deployment, error) {
-
-	var err error
-
-	//get all the replica deployment pods for this cluster
-	var pod v1.Pod
-	var deployment appsv1.Deployment
-
-	//get all the deployments that are replicas for this clustername
-
-	var pods *v1.PodList
-
-	selector := config.LABEL_PG_CLUSTER + "=" + clusterName + "," + config.LABEL_SERVICE_NAME + "=" + clusterName + "-replica"
-
-	pods, err = kubeapi.GetPods(clientset, selector, namespace)
-	if err != nil {
-		return &pod, &deployment, err
-	}
-
-	if len(pods.Items) == 0 {
-		return &pod, &deployment, errors.New("no replica pods found for cluster " + clusterName)
-	}
-
-	for _, p := range pods.Items {
-		pod = p
-		log.Debugf("pod found for replica %s", pod.Name)
-		if len(pods.Items) == 1 {
-			log.Debug("only 1 pod found for failover best match..using it by default")
-			return &pod, &deployment, err
-		}
-
-		for _, c := range pod.Spec.Containers {
-			log.Debugf("container %s found in pod", c.Name)
-		}
-
-	}
-
-	return &pod, &deployment, err
-}
+var (
+	// instanceInfoCommand is the command used to get information about the status
+	// and other statistics about the instances in a PostgreSQL cluster, e.g.
+	// replication lag
+	instanceInfoCommand = []string{"patronictl", "list", "-f", "json"}
+)
 
 // GetPod determines the best target to fail to
 func GetPod(clientset *kubernetes.Clientset, deploymentName, namespace string) (*v1.Pod, error) {
@@ -99,7 +87,7 @@ func GetPod(clientset *kubernetes.Clientset, deploymentName, namespace string) (
 	var pod *v1.Pod
 	var pods *v1.PodList
 
-	selector := "replica-name=" + deploymentName
+	selector := config.LABEL_DEPLOYMENT_NAME + "=" + deploymentName + "," + config.LABEL_PGHA_ROLE + "=replica"
 	pods, err = kubeapi.GetPods(clientset, selector, namespace)
 	if err != nil {
 		return pod, err
@@ -128,176 +116,112 @@ func GetPod(clientset *kubernetes.Clientset, deploymentName, namespace string) (
 	return pod, err
 }
 
-func GetRepStatus(restclient *rest.RESTClient, clientset *kubernetes.Clientset, dep *appsv1.Deployment, namespace, databasePort string) (uint64, uint64, string, error) {
-	var err error
+// ReplicationStatus is responsible for retrieving and returning the replication
+// information about the status of the replicas in a PostgreSQL cluster. It
+// executes into a single replica pod and leverages the functionality of Patroni
+// for getting the key metrics that are appropriate to help the user understand
+// the current state of their replicas.
+//
+// Statistics include: the current node the replica is on, if it is up, the
+// replication lag, etc.
+func ReplicationStatus(request ReplicationStatusRequest) (ReplicationStatusResponse, error) {
+	response := ReplicationStatusResponse{
+		Instances: make([]InstanceReplicationInfo, 0),
+	}
 
-	var receiveLocation, replayLocation uint64
+	// First, get replica pods using selector pg-cluster=clusterName-replica,role=replica
+	selector := fmt.Sprintf("%s=%s,%s=replica",
+		config.LABEL_PG_CLUSTER, request.ClusterName, config.LABEL_PGHA_ROLE)
 
-	var nodeName string
+	log.Debugf(`searching for pods with "%s"`, selector)
+	pods, err := kubeapi.GetPods(request.Clientset, selector, request.Namespace)
 
-	//get the pods for this deployment
-	selector := config.LABEL_DEPLOYMENT_NAME + "=" + dep.Name
-	podList, err := kubeapi.GetPods(clientset, selector, namespace)
+	// If there is an error trying to get the pods, return here. Allow the caller
+	// to handle the error
 	if err != nil {
-		log.Error(err.Error())
-		return receiveLocation, replayLocation, nodeName, err
+		return response, err
 	}
 
-	if len(podList.Items) != 1 {
-		log.Debugf("no replicas found for dep %s", dep.Name)
-		log.Error(err.Error())
-		return receiveLocation, replayLocation, nodeName, err
+	// See how many replica instances were found. If none were found then return
+	log.Debugf(`replica pods found "%d"`, len(pods.Items))
+
+	if len(pods.Items) == 0 {
+		return response, err
 	}
 
-	pod := podList.Items[0]
+	// We need to create a quick map of "instance name" => node name
+	// We will iterate through the pod list once to extract the name we refer to
+	// the specific instance as, as well as which node it is deployed on
+	instanceNodeMap := createInstanceNodeMap(pods)
 
-	//get the crd for this dep
-	cluster := crv1.Pgcluster{}
-	var clusterfound bool
-	clusterfound, err = kubeapi.Getpgcluster(restclient, &cluster, dep.ObjectMeta.Labels[config.LABEL_PG_CLUSTER], namespace)
-	if err != nil || !clusterfound {
-		log.Error("Getpgcluster error: " + err.Error())
-		return receiveLocation, replayLocation, nodeName, err
+	// Now get the statistics about the current state of the replicas, which we
+	// can delegate to Patroni vis-a-vis the information that it collects
+	// We can get the statistics about the current state of the managed instance
+	// From executing and running a command in the first pod
+	pod := pods.Items[0]
+
+	// Execute the command that will retrieve the replica information from Patroni
+	commandStdOut, _, err := kubeapi.ExecToPodThroughAPI(
+		request.RESTConfig, request.Clientset, instanceInfoCommand,
+		pod.Spec.Containers[0].Name, pod.Name, request.Namespace, nil)
+
+	// if there is an error, return. We will log the error at a higher level
+	if err != nil {
+		return response, err
 	}
 
-	//get the postgres secret for this dep
-	var secretInfo []msgs.ShowUserSecret
-	secretInfo, err = getSecrets(clientset, &cluster, namespace)
-	var pgSecret msgs.ShowUserSecret
-	var found bool
-	for _, si := range secretInfo {
-		if si.Username == "postgres" {
-			pgSecret = si
-			found = true
-			log.Debug("postgres secret found")
+	// parse the JSON and plast it into instanceInfoList
+	var rawInstances []instanceReplicationInfoJSON
+	json.Unmarshal([]byte(commandStdOut), &rawInstances)
+
+	log.Debugf("patroni instance info: %v", rawInstances)
+
+	// We need to iterate through this list to format the information for the
+	// response
+	for _, rawInstance := range rawInstances {
+		// if this is a primary, skip it
+		if rawInstance.Type == instanceReplicationInfoTypePrimary {
+			continue
 		}
-	}
 
-	if !found {
-		log.Error("postgres secret not found for " + dep.Name)
-		return receiveLocation, replayLocation, nodeName, errors.New("postgres secret not found for " + dep.Name)
-	}
-
-	port := databasePort
-	databaseName := "postgres"
-	target := getSQLTarget(&pod, pgSecret.Username, pgSecret.Password, port, databaseName)
-	var repInfo *ReplicationInfo
-	repInfo, err = GetReplicationInfo(target)
-	if err != nil {
-		log.Error(err)
-		return receiveLocation, replayLocation, nodeName, err
-	}
-
-	receiveLocation = repInfo.ReceiveLocation
-	replayLocation = repInfo.ReplayLocation
-
-	nodeName = pod.Spec.NodeName
-
-	return receiveLocation, replayLocation, nodeName, nil
-}
-
-func getSQLTarget(pod *v1.Pod, username, password, port, db string) string {
-	target := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s?sslmode=disable",
-		username,
-		password,
-		pod.Status.PodIP,
-		port,
-		db,
-	)
-	return target
-
-}
-func GetReplicationInfo(target string) (*ReplicationInfo, error) {
-	conn, err := sql.Open("postgres", target)
-
-	if err != nil {
-		log.Errorf("Could not connect to: %s", target)
-		return nil, err
-	}
-
-	defer conn.Close()
-
-	// Get PG version
-	var version int
-
-	rows, err := conn.Query("SELECT current_setting('server_version_num')")
-
-	if err != nil {
-		log.Errorf("Could not perform query for version: %s", target)
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		if err := rows.Scan(&version); err != nil {
-			return nil, err
+		// set up the instance that will be returned
+		instance := InstanceReplicationInfo{
+			ReplicationLag: rawInstance.ReplicationLag,
+			Status:         rawInstance.State,
+			Timeline:       rawInstance.Timeline,
 		}
-	}
-	// Get replication info
-	var replicationInfoQuery string
-	var recvLocation uint64
-	var replayLocation uint64
 
-	if version < 100000 {
-		replicationInfoQuery = fmt.Sprintf(
-			replInfoQueryFormat,
-			locationDiffV9, recvV9,
-			locationDiffV9, replayV9,
-		)
-	} else {
-		replicationInfoQuery = fmt.Sprintf(
-			replInfoQueryFormat,
-			locationDiffV10, recvV10,
-			locationDiffV10, replayV10,
-		)
-	}
+		// get the instance name that is recognized by the Operator, which is the
+		// first part of the name and is kept on a deployment label. We have these
+		// available in our instanceNodeMap, and because we skip over the primary,
+		// this will not lead to false positive
+		//
+		// This is not the cleanest way of doing it, but it works
+		for name, node := range instanceNodeMap {
+			r, err := regexp.Compile(fmt.Sprintf(pgPodNamePattern, name))
 
-	rows, err = conn.Query(replicationInfoQuery)
+			// if there is an error compiling the regular expression, add an error to
+			// log log and keep iterating
+			if err != nil {
+				log.Error(err)
+				continue
+			}
 
-	if err != nil {
-		log.Errorf("Could not perform replication info query: %s", target)
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		if err := rows.Scan(&recvLocation, &replayLocation); err != nil {
-			return nil, err
+			// see if there is a match in the names. If it , add the name and node for
+			// this particular instance
+			if r.Match([]byte(rawInstance.PodName)) {
+				instance.Name = name
+				instance.Node = node
+				break
+			}
 		}
+
+		// append this newly created instance to the list that will be returned
+		response.Instances = append(response.Instances, instance)
 	}
 
-	return &ReplicationInfo{
-		ReceiveLocation: recvLocation,
-		ReplayLocation:  replayLocation,
-		Node:            "",
-		DeploymentName:  "",
-	}, nil
-}
-
-func getSecrets(clientset *kubernetes.Clientset, cluster *crv1.Pgcluster, namespace string) ([]msgs.ShowUserSecret, error) {
-
-	output := make([]msgs.ShowUserSecret, 0)
-	selector := "pgpool!=true," + config.LABEL_PG_CLUSTER + "=" + cluster.Spec.Name
-
-	secrets, err := kubeapi.GetSecrets(clientset, selector, namespace)
-	if err != nil {
-		return output, err
-	}
-
-	log.Debugf("got %d secrets for %s", len(secrets.Items), cluster.Spec.Name)
-	for _, s := range secrets.Items {
-		d := msgs.ShowUserSecret{}
-		d.Name = s.Name
-		d.Username = string(s.Data["username"][:])
-		d.Password = string(s.Data["password"][:])
-		output = append(output, d)
-
-	}
-
-	return output, err
+	// pass along the response for the requestor to process
+	return response, nil
 }
 
 func GetPreferredNodes(clientset *kubernetes.Clientset, selector, namespace string) ([]string, error) {
@@ -315,4 +239,111 @@ func GetPreferredNodes(clientset *kubernetes.Clientset, selector, namespace stri
 	}
 
 	return nodes, err
+}
+
+// ToggleAutoFailover enables or disables autofailover for a cluster.  Disabling autofailover means "pausing"
+// Patroni, which will result in Patroni stepping aside from managing the cluster.  This will effectively cause
+// Patroni to stop responding to failures or other database activities, e.g. it will not attempt to start the
+// database when stopped to perform maintenance
+func ToggleAutoFailover(clientset *kubernetes.Clientset, enable bool, pghaScope, namespace string) error {
+
+	// find the "config" configMap created by Patroni
+	configMapName := pghaScope + "-config"
+	log.Debugf("setting autofailover to %t for cluster with pgha scope %s", enable, pghaScope)
+
+	configMap, found := kubeapi.GetConfigMap(clientset, configMapName, namespace)
+	if !found {
+		err := fmt.Errorf("Unable to find configMap %s when attempting disable autofailover", configMapName)
+		log.Error(err)
+		return err
+	}
+
+	configJSONStr := configMap.ObjectMeta.Annotations["config"]
+
+	var configJSON map[string]interface{}
+	json.Unmarshal([]byte(configJSONStr), &configJSON)
+
+	if !enable {
+		// disable autofail condition
+		disableFailover(clientset, configMap, configJSON, namespace)
+	} else {
+		// enable autofail
+		enableFailover(clientset, configMap, configJSON, namespace)
+	}
+
+	return nil
+}
+
+// createInstanceNodeMap creates a mapping between the names of the PostgreSQL
+// instances to the Nodes that they run on, based upon the output from a
+// Kubernetes API query
+func createInstanceNodeMap(pods *v1.PodList) map[string]string {
+	instanceNodeMap := map[string]string{}
+
+	// Iterate through each pod that is returned and get the mapping between the
+	// PostgreSQL instance name and the node it is scheduled on
+	for _, pod := range pods.Items {
+		// get the replica name from the metadata on the pod
+		// for legacy purposes, we are using the "deployment name" label
+		replicaName := pod.ObjectMeta.Labels[config.LABEL_DEPLOYMENT_NAME]
+		// get the node name from the spec on the pod
+		nodeName := pod.Spec.NodeName
+		// add them to the map
+		instanceNodeMap[replicaName] = nodeName
+	}
+
+	log.Debugf("instance/node map: %v", instanceNodeMap)
+
+	return instanceNodeMap
+}
+
+// If "pause" is present in the config and set to "true", then it needs to be removed to enable
+// failover.  Otherwise, if "pause" isn't present in the config or if it has a value other than
+// true, then assume autofail is enabled and do nothing (when Patroni see's an invalid value for
+// "pause" it sets it to "true")
+func enableFailover(clientset *kubernetes.Clientset, configMap *v1.ConfigMap, configJSON map[string]interface{},
+	namespace string) error {
+	if _, ok := configJSON["pause"]; ok && configJSON["pause"] == true {
+		log.Debugf("updating pause key in configMap %s to enable autofailover", configMap.Name)
+		//  disabled autofail by removing "pause" from the config
+		delete(configJSON, "pause")
+		configJSONFinalStr, err := json.Marshal(configJSON)
+		if err != nil {
+			return err
+		}
+		configMap.ObjectMeta.Annotations["config"] = string(configJSONFinalStr)
+		err = kubeapi.UpdateConfigMap(clientset, configMap, namespace)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Debugf("autofailover already enabled according to the pause key (or lack thereof) in configMap %s",
+			configMap.Name)
+	}
+	return nil
+}
+
+// If "pause" isn't present in the config then assume autofail is enabled and needs to be disabled
+// by setting "pause" to true.  Or if it is present and set to something other than "true" (e.g.
+// "false" or "null"), then it also needs to be disabled by setting "pause" to true.
+func disableFailover(clientset *kubernetes.Clientset, configMap *v1.ConfigMap, configJSON map[string]interface{},
+	namespace string) error {
+	if _, ok := configJSON["pause"]; !ok || configJSON["pause"] != true {
+		log.Debugf("updating pause key in configMap %s to disable autofailover", configMap.Name)
+		// disable autofail by setting "pause" to true
+		configJSON["pause"] = true
+		configJSONFinalStr, err := json.Marshal(configJSON)
+		if err != nil {
+			return err
+		}
+		configMap.ObjectMeta.Annotations["config"] = string(configJSONFinalStr)
+		err = kubeapi.UpdateConfigMap(clientset, configMap, namespace)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Debugf("autofailover already disabled according to the pause key in configMap %s",
+			configMap.Name)
+	}
+	return nil
 }

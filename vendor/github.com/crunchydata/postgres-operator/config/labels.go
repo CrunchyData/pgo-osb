@@ -21,12 +21,12 @@ const LABEL_SELECTOR = "selector"
 const LABEL_OPERATOR = "postgres-operator"
 const LABEL_PG_CLUSTER = "pg-cluster"
 const LABEL_PG_CLUSTER_IDENTIFIER = "pg-cluster-id"
+const LABEL_PG_DATABASE = "pgo-pg-database"
 
 const LABEL_PGBACKUP = "pgbackup"
 const LABEL_PGTASK = "pg-task"
 
 const LABEL_AUTOFAIL = "autofail"
-const LABEL_AUTOFAIL_REPLACE_REPLICA = "autofail-replace-replica"
 const LABEL_FAILOVER = "failover"
 
 const LABEL_TARGET = "target"
@@ -38,7 +38,6 @@ const LABEL_PGREMOVE = "pgremove"
 const LABEL_PVCNAME = "pvcname"
 const LABEL_COLLECT = "crunchy_collect"
 const LABEL_COLLECT_PG_USER = "ccp_monitoring"
-const LABEL_COLLECT_CCPIMAGE = "crunchy-collect"
 const LABEL_ARCHIVE = "archive"
 const LABEL_ARCHIVE_TIMEOUT = "archive-timeout"
 const LABEL_CUSTOM_CONFIG = "custom-config"
@@ -48,6 +47,8 @@ const LABEL_REPLICA_NAME = "replica-name"
 const LABEL_CCP_IMAGE_TAG_KEY = "ccp-image-tag"
 const LABEL_CCP_IMAGE_KEY = "ccp-image"
 const LABEL_SERVICE_TYPE = "service-type"
+const LABEL_POD_ANTI_AFFINITY = "pg-pod-anti-affinity"
+const LABEL_SYNC_REPLICATION = "sync-replication"
 
 const LABEL_REPLICA_COUNT = "replica-count"
 const LABEL_RESOURCES_CONFIG = "resources-config"
@@ -125,13 +126,6 @@ const LABEL_USERNAME = "username"
 const LABEL_ROLENAME = "rolename"
 const LABEL_PASSWORD = "password"
 
-const LABEL_PGPOOL = "crunchy-pgpool"
-const LABEL_PGPOOL_POD = "crunchy-pgpool-pod"
-const LABEL_PGPOOL_SECRET = "pgpool-secret"
-const LABEL_PGPOOL_TASK_ADD = "pgpool-add"
-const LABEL_PGPOOL_TASK_DELETE = "pgpool-delete"
-const LABEL_PGPOOL_TASK_CLUSTER = "pgpool-cluster"
-const LABEL_PGPOOL_TASK_RECONFIGURE = "pgpool-reconfigure"
 const LABEL_PGBOUNCER = "crunchy-pgbouncer"
 const LABEL_PGBOUNCER_SECRET = "pgbouncer-secret"
 const LABEL_PGBOUNCER_TASK_ADD = "pgbouncer-add"
@@ -153,6 +147,14 @@ const LABEL_PGO_BACKREST_REPO = "pgo-backrest-repo"
 
 const LABEL_PGO_BENCHMARK = "pgo-benchmark"
 
+// a general label for grouping all the tasks...helps with cleanups
+const LABEL_PGO_CLONE = "pgo-clone"
+
+// the individualized step labels
+const LABEL_PGO_CLONE_STEP_1 = "pgo-clone-step-1"
+const LABEL_PGO_CLONE_STEP_2 = "pgo-clone-step-2"
+const LABEL_PGO_CLONE_STEP_3 = "pgo-clone-step-3"
+
 const LABEL_DEPLOYMENT_NAME = "deployment-name"
 const LABEL_SERVICE_NAME = "service-name"
 const LABEL_CURRENT_PRIMARY = "current-primary"
@@ -162,7 +164,7 @@ const LABEL_CLAIM_NAME = "claimName"
 const LABEL_PGO_PGOUSER = "pgo-pgouser"
 const LABEL_PGO_PGOROLE = "pgo-pgorole"
 const LABEL_PGOUSER = "pgouser"
-const LABEL_WORKFLOW_ID = "workflow-id"
+const LABEL_WORKFLOW_ID = "workflowid" // NOTE: this now matches crv1.PgtaskWorkflowID
 
 const LABEL_TRUE = "true"
 const LABEL_FALSE = "false"
@@ -178,3 +180,8 @@ const LABEL_PGO_DEFAULT_SC = "pgo-default-sc"
 const LABEL_FAILOVER_STARTED = "failover-started"
 
 const GLOBAL_CUSTOM_CONFIGMAP = "pgo-custom-pg-config"
+
+const LABEL_PGHA_SCOPE = "crunchy-pgha-scope"
+const LABEL_PGHA_DEFAULT_CONFIGMAP = "pgha-default-config"
+const LABEL_PGHA_BACKUP_TYPE = "pgha-backup-type"
+const LABEL_PGHA_ROLE = "role"
