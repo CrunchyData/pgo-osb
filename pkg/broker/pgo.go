@@ -16,6 +16,7 @@ package broker
 */
 
 import (
+	"strconv"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -328,7 +329,12 @@ func (po *PGOperator) ClusterDetail(instanceID string) (ClusterDetails, error) {
 	}
 
 	detail := &response.Results[0]
-	if l := len(detail.Services); l != 1 {
+	replicaCount, err := strconv.Atoi(detail.Cluster.Spec.Replicas)
+	if err != nil {
+		return noInfo, fmt.Errorf("invalid replica count %s in cluster spec, unable to convert to int: %s", 
+			detail.Cluster.Spec.Replicas, err)
+	}
+	if l := len(detail.Services); (replicaCount == 0 && l != 1) || (replicaCount > 0 && l != 2) {
 		return noInfo, fmt.Errorf("unexpected number of services for cluster: %d", l)
 	}
 	svc := detail.Services[0]
