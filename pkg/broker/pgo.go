@@ -248,7 +248,7 @@ func (po *PGOperator) CreateBinding(instanceID, bindID, appID string) (BasicCred
 	}
 
 	suReq := &msgs.ShowUserRequest{
-		AllFlag:       true,
+		AllFlag:       false,
 		ClientVersion: po.clientVer,
 		Namespace:     ns,
 		Selector:      po.instLabel(instanceID),
