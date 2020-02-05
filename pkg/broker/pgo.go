@@ -405,7 +405,7 @@ func (po *PGOperator) DeleteBinding(instanceID, bindID string) error {
 	user := fmt.Sprintf("user%s", strings.ToLower(u))
 
 	duReq := msgs.DeleteUserRequest{
-		AllFlag:       true,
+		AllFlag:       false,
 		ClientVersion: po.clientVer,
 		Namespace:     ns,
 		Selector:      po.instLabel(instanceID),
@@ -443,7 +443,7 @@ func (po *PGOperator) DeleteCluster(instanceID string) error {
 
 	// Ensure no bound users exist
 	suReq := &msgs.ShowUserRequest{
-		AllFlag:       true,
+		AllFlag:       false,
 		ClientVersion: po.clientVer,
 		Namespace:     ns,
 		Selector:      po.instLabel(instanceID),
