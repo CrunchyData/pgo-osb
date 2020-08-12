@@ -1,0 +1,60 @@
+module github.com/crunchydata/pgo-osb
+
+go 1.13
+
+require (
+	github.com/PuerkitoBio/purell v1.1.1
+	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
+	github.com/beorn7/perks v1.0.1
+	github.com/crunchydata/postgres-operator v4.2.3+incompatible
+	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c
+	github.com/emicklei/go-restful v2.10.0+incompatible
+	github.com/evanphx/json-patch v4.5.0+incompatible
+	github.com/ghodss/yaml v1.0.0
+	github.com/go-openapi/jsonpointer v0.19.3
+	github.com/go-openapi/jsonreference v0.19.3
+	github.com/go-openapi/spec v0.19.3
+	github.com/go-openapi/swag v0.19.5
+	github.com/gofrs/uuid v3.2.0+incompatible
+	github.com/gogo/protobuf v1.3.0
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/protobuf v1.3.2
+	github.com/google/btree v1.0.0
+	github.com/google/gofuzz v1.0.0
+	github.com/googleapis/gnostic v0.3.1
+	github.com/gorilla/mux v1.7.3
+	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
+	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c
+	github.com/imdario/mergo v0.3.8
+	github.com/json-iterator/go v1.1.7
+	github.com/juju/ratelimit v0.0.0-20171026090426-59fac5042749
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2
+	github.com/kubernetes/client-go v6.0.0+incompatible
+	github.com/lib/pq v1.2.0
+	github.com/mailru/easyjson v0.7.0
+	github.com/matttproud/golang_protobuf_extensions v1.0.1
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+	github.com/modern-go/reflect2 v1.0.1
+	github.com/petar/GoLLRB v0.0.0-20190514000832-33fb24c13b99
+	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
+	github.com/pkg/errors v0.8.1
+	github.com/pmorie/go-open-service-broker-client v0.0.0-20180928143052-79b374a2302f
+	github.com/pmorie/osb-broker-lib v0.0.0-20180423193413-f4ca270ef323
+	github.com/prometheus/client_golang v1.0.0
+	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4
+	github.com/prometheus/common v0.7.0
+	github.com/prometheus/procfs v0.0.5
+	github.com/shawn-hurley/osb-broker-k8s-lib v0.0.0-20180430125558-bed19ac36ffe
+	github.com/sirupsen/logrus v1.4.2
+	github.com/spf13/pflag v1.0.5
+	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
+	golang.org/x/net v0.0.0-20191003171128-d98b1b443823
+	golang.org/x/sys v0.0.0-20191007092633-5f54ce542709
+	golang.org/x/text v0.3.2
+	gopkg.in/inf.v0 v0.9.1
+	gopkg.in/yaml.v2 v2.2.4
+	k8s.io/api v0.0.0-20171214033149-af4bc157c3a2
+	k8s.io/apimachinery v0.0.0-20171207040834-180eddb345a5
+	k8s.io/client-go v6.0.0+incompatible
+	k8s.io/kube-openapi v0.0.0-20190918143330-0270cf2f1c1d
+)
