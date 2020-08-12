@@ -25,16 +25,17 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/crunchydata/pgo-osb/pkg/osb-bridge"
-	"github.com/crunchydata/postgres-operator/config"
-	"github.com/crunchydata/postgres-operator/util"
+	bridge "github.com/crunchydata/pgo-osb/pkg/osb-bridge"
 
+	crv1 "github.com/crunchydata/postgres-operator/pkg/apis/crunchydata.com/v1"
 	"github.com/gofrs/uuid"
 	"github.com/pmorie/osb-broker-lib/pkg/metrics"
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
 	prom "github.com/prometheus/client_golang/prometheus"
 	"github.com/shawn-hurley/osb-broker-k8s-lib/middleware"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clientset "k8s.io/client-go/kubernetes"
 	clientrest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -69,7 +70,6 @@ func main() {
 	flag.Parse()
 
 	log.SetOutput(os.Stdout)
-	log.Println(config.LABEL_PG_CLUSTER)
 
 	if options.PGO_OSB_GUID == "" {
 		u, err := uuid.NewV4()
@@ -206,12 +206,34 @@ func getRestClient(kubeConfigPath string) (*clientrest.RESTClient, error) {
 		return nil, err
 	}
 
-	restClient, _, err := util.NewClient(kubeConfig)
+	restClient, _, err := newClient(kubeConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return restClient, nil
+}
+
+// newClient gets a REST connection to Kubernetes. This is imported from an
+// older version of the Operator and likely just needs to be redone
+func newClient(cfg *clientrest.Config) (*clientrest.RESTClient, *runtime.Scheme, error) {
+	scheme := runtime.NewScheme()
+	if err := crv1.AddToScheme(scheme); err != nil {
+		return nil, nil, err
+	}
+
+	config := *cfg
+	config.GroupVersion = &crv1.SchemeGroupVersion
+	config.APIPath = "/apis"
+	config.ContentType = runtime.ContentTypeJSON
+	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: serializer.NewCodecFactory(scheme)}
+
+	client, err := clientrest.RESTClientFor(&config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return client, scheme, nil
 }
 
 func cancelOnInterrupt(ctx context.Context, f context.CancelFunc) {
