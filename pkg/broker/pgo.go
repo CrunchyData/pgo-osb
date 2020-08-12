@@ -16,7 +16,6 @@ package broker
 */
 
 import (
-	"strconv"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -25,13 +24,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
-	crv1 "github.com/crunchydata/postgres-operator/apis/cr/v1"
-	msgs "github.com/crunchydata/postgres-operator/apiservermsgs"
-	"github.com/crunchydata/postgres-operator/kubeapi"
 	api "github.com/crunchydata/postgres-operator/pgo/api"
+	crv1 "github.com/crunchydata/postgres-operator/pkg/apis/crunchydata.com/v1"
+	msgs "github.com/crunchydata/postgres-operator/pkg/apiservermsgs"
 
 	"k8s.io/client-go/rest"
 )
@@ -95,8 +94,12 @@ func (po *PGOperator) findInstanceNamespace(instID string) (string, error) {
 		selector := po.instLabel(instID)
 		log.Print("find cluster " + selector)
 
-		clusterList := crv1.PgclusterList{}
-		err := kubeapi.GetpgclustersBySelector(po.kubeClient, &clusterList, selector, "")
+		clusterList := &crv1.PgclusterList{}
+		err := po.kubeClient.Get().
+			Resource(crv1.PgclusterResourcePlural).
+			Param("labelSelector", selector).
+			Do().
+			Into(clusterList)
 		if err != nil {
 			return "", err
 		}
@@ -176,30 +179,48 @@ func (po *PGOperator) createRequestByPlan(planID string, req *msgs.CreateCluster
 	switch planID {
 	case "885a1cb6-ca42-43e9-a725-8195918e1343":
 		req.MetricsFlag = true
-		req.ContainerResources = "osbsmall"
+		req.CPULimit = "1.0"
+		req.CPURequest = "0.1"
+		req.MemoryLimit = "512Mi"
+		req.MemoryRequest = "512Mi"
 		req.StorageConfig = "osbsmall"
 	case "dc951396-bb28-45a4-b040-cfe3bebc6121":
 		req.MetricsFlag = true
-		req.ContainerResources = "osbmedium"
+		req.CPULimit = "2.0"
+		req.CPURequest = "0.5"
+		req.MemoryLimit = "1Gi"
+		req.MemoryRequest = "1Gi"
 		req.StorageConfig = "osbmedium"
 	case "04349656-4dc9-4b67-9b15-52a93d64d566":
 		req.MetricsFlag = true
-		req.ContainerResources = "osblarge"
+		req.CPULimit = "4.0"
+		req.CPURequest = "1.0"
+		req.MemoryLimit = "2Gi"
+		req.MemoryRequest = "2Gi"
 		req.StorageConfig = "osblarge"
 	case "877432f8-07eb-4e57-b984-d025a71d2282":
 		req.MetricsFlag = true
 		req.ReplicaCount = 1
-		req.ContainerResources = "osbsmall"
+		req.CPULimit = "1.0"
+		req.CPURequest = "0.1"
+		req.MemoryLimit = "512Mi"
+		req.MemoryRequest = "512Mi"
 		req.StorageConfig = "osbsmall"
 	case "89bcdf8a-e637-4bb3-b7ce-aca083cc1e69":
 		req.MetricsFlag = true
 		req.ReplicaCount = 1
-		req.ContainerResources = "osbmedium"
+		req.CPULimit = "2.0"
+		req.CPURequest = "0.5"
+		req.MemoryLimit = "1Gi"
+		req.MemoryRequest = "1Gi"
 		req.StorageConfig = "osbmedium"
 	case "470ca1a0-2763-41f1-a4cf-985acdb549ab":
 		req.MetricsFlag = true
 		req.ReplicaCount = 1
-		req.ContainerResources = "osblarge"
+		req.CPULimit = "4.0"
+		req.CPURequest = "1.0"
+		req.MemoryLimit = "2Gi"
+		req.MemoryRequest = "2Gi"
 		req.StorageConfig = "osblarge"
 	default:
 		return
@@ -267,12 +288,11 @@ func (po *PGOperator) CreateBinding(instanceID, bindID, appID string) (BasicCred
 		log.Println("no users found")
 		return BasicCred{}, errors.New("no users found for instance " + instanceID)
 	}
-	users := suResp.Results[0]
+	users := suResp.Results
 	log.Println("cluster secrets are:")
 	credentials := make(map[string]interface{})
-	for _, s := range users.Secrets {
+	for _, s := range users {
 		if os.Getenv("CRUNCHY_DEBUG") == "true" {
-			log.Println("secret : " + s.Name)
 			log.Println("username: " + s.Username)
 			log.Println("password: " + s.Password)
 		}
@@ -331,7 +351,7 @@ func (po *PGOperator) ClusterDetail(instanceID string) (ClusterDetails, error) {
 	detail := &response.Results[0]
 	replicaCount, err := strconv.Atoi(detail.Cluster.Spec.Replicas)
 	if err != nil {
-		return noInfo, fmt.Errorf("invalid replica count %s in cluster spec, unable to convert to int: %s", 
+		return noInfo, fmt.Errorf("invalid replica count %s in cluster spec, unable to convert to int: %s",
 			detail.Cluster.Spec.Replicas, err)
 	}
 	if l := len(detail.Services); (replicaCount == 0 && l != 1) || (replicaCount > 0 && l != 2) {
@@ -361,7 +381,6 @@ func (po *PGOperator) CreateCluster(req CreateRequest) error {
 		ClientVersion: po.clientVer,
 		Name:          req.Name,
 		Namespace:     req.Namespace,
-		Series:        1,
 		UserLabels:    po.instLabel(req.InstanceID),
 	}
 	po.createRequestByPlan(req.PlanID, r)
@@ -376,9 +395,7 @@ func (po *PGOperator) CreateCluster(req CreateRequest) error {
 		log.Println("create cluster non-Ok status: ", response.Msg)
 		return errors.New(response.Msg)
 	} else {
-		for _, v := range response.Results {
-			log.Println(v)
-		}
+		log.Println(response.Result)
 	}
 
 	return nil
@@ -462,8 +479,8 @@ func (po *PGOperator) DeleteCluster(instanceID string) error {
 		log.Println("no users found, expected default users")
 		return errors.New("unexpected user state: no default users " + instanceID)
 	}
-	users := suResp.Results[0]
-	for _, s := range users.Secrets {
+	users := suResp.Results
+	for _, s := range users {
 		if strings.Compare("user", s.Username[:4]) == 0 {
 			return ErrBindingsRemain
 		}

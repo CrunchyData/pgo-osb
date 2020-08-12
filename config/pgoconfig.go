@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"strconv"
 
-	crv1 "github.com/crunchydata/pgo-osb/apis/cr/v1"
+	crv1 "github.com/crunchydata/pgo-osb/v4/apis/cr/v1"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )

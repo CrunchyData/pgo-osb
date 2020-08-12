@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 	github.com/beorn7/perks v1.0.1
-	github.com/crunchydata/postgres-operator v4.2.3+incompatible
+	github.com/crunchydata/postgres-operator v4.4.0+incompatible
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c
 	github.com/emicklei/go-restful v2.10.0+incompatible
 	github.com/evanphx/json-patch v4.5.0+incompatible
@@ -47,6 +47,7 @@ require (
 	github.com/shawn-hurley/osb-broker-k8s-lib v0.0.0-20180430125558-bed19ac36ffe
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5
+	github.com/xdg/stringprep v1.0.0 // indirect
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
 	golang.org/x/net v0.0.0-20191003171128-d98b1b443823
 	golang.org/x/sys v0.0.0-20191007092633-5f54ce542709
