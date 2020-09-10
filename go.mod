@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/expenv v1.2.0 // indirect
-	github.com/crunchydata/postgres-operator v4.4.1+incompatible
+	github.com/crunchydata/postgres-operator v4.3.3+incompatible
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20200809112317-0581fc3aee2d // indirect
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
