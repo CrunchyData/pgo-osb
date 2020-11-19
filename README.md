@@ -4,7 +4,7 @@
   <img width="300" src="./docs/assets/images/crunchy_logo.png?raw=true"/>
 </p>
 
-Latest Release: v4.5.1, 2020-10-13
+Latest Release: v4.5.1, 2020-11-19
 
 ## General
 
