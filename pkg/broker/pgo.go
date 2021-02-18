@@ -89,6 +89,12 @@ func (po *PGOperator) findInstanceNamespace(instID string) (string, error) {
 	if ns, ok := po.nsLookup[instID]; ok {
 		po.nsMutex.RUnlock()
 		return ns, nil
+	} else if ns := os.Getenv("PGO_CLUSTER_NAMESPACE"); ns != "" {
+		po.nsMutex.RUnlock()
+		po.nsMutex.Lock()
+		po.nsLookup[instID] = ns
+		po.nsMutex.Unlock()
+		return ns, nil
 	} else {
 		po.nsMutex.RUnlock()
 		selector := po.instLabel(instID)
