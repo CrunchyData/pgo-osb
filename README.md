@@ -229,6 +229,11 @@ pgo-osb-69c76578b9-v7s9k   1/1       Running   0          16m
 
 To use the **pgo-osb** broker, please follow the following instructions.
 
+Note that if you want to specify a specific namespace for where your PostgreSQL
+cluster is deployed to, you can use the `PGO_CLUSTER_NAMESPACE` environmental
+variable. Otherwise, **pgo-osb** will search across all namespaces to look up
+where the cluster exists.
+
 ### Show Available Plans
 
 ```shell
