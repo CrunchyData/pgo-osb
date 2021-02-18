@@ -295,7 +295,7 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *osblib.RequestContext)
 	}
 
 	port := 5432
-	dbName := "userdb"
+	dbName := clusterDetail.ClusterName
 	host := clusterDetail.ExternalIP
 	if host == "" {
 		host = clusterDetail.ClusterIP
