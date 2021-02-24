@@ -183,6 +183,8 @@ func (po *PGOperator) instLabel(instID string) string {
 // unique identifiers
 func (po *PGOperator) createRequestByPlan(planID string, req *msgs.CreateClusterRequest) {
 	switch planID {
+	default:
+		fallthrough
 	case "885a1cb6-ca42-43e9-a725-8195918e1343":
 		req.MetricsFlag = true
 		req.CPULimit = "1.0"
@@ -228,8 +230,6 @@ func (po *PGOperator) createRequestByPlan(planID string, req *msgs.CreateCluster
 		req.MemoryLimit = "2Gi"
 		req.MemoryRequest = "2Gi"
 		req.StorageConfig = "osblarge"
-	default:
-		return
 	}
 }
 
