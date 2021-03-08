@@ -18,6 +18,7 @@ limitations under the License.
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"sync"
 
@@ -309,12 +310,12 @@ func (b *BusinessLogic) Bind(request *osb.BindRequest, c *osblib.RequestContext)
 				"db_name":       dbName,
 				"db_host":       host,
 				"internal_host": clusterDetail.ClusterIP,
-				"uri": fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-					bindCreds.Username,
-					bindCreds.Password,
-					host,
-					port,
-					dbName),
+				"uri": (&url.URL{
+					Scheme: "postgresql",
+					Host:   fmt.Sprintf("%s:%d", host, port),
+					User:   url.UserPassword(bindCreds.Username, bindCreds.Password),
+					Path:   dbName,
+				}).String(),
 			},
 		},
 	}
