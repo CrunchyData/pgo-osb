@@ -370,6 +370,7 @@ func (po *PGOperator) ClusterDetail(instanceID string) (ClusterDetails, error) {
 		ClusterIP:   svc.ClusterIP,
 		ClusterName: svc.ClusterName,
 		ExternalIP:  svc.ExternalIP,
+		Database:    detail.Cluster.Spec.Database,
 	}
 
 	return cDetail, nil
