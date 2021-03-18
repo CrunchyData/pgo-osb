@@ -16,6 +16,7 @@ package broker
 */
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -28,7 +29,7 @@ import (
 	"strings"
 	"sync"
 
-	api "github.com/crunchydata/postgres-operator/pgo/api"
+	api "github.com/crunchydata/postgres-operator/cmd/pgo/api"
 	crv1 "github.com/crunchydata/postgres-operator/pkg/apis/crunchydata.com/v1"
 	msgs "github.com/crunchydata/postgres-operator/pkg/apiservermsgs"
 
@@ -104,7 +105,7 @@ func (po *PGOperator) findInstanceNamespace(instID string) (string, error) {
 		err := po.kubeClient.Get().
 			Resource(crv1.PgclusterResourcePlural).
 			Param("labelSelector", selector).
-			Do().
+			Do(context.Background()).
 			Into(clusterList)
 		if err != nil {
 			return "", err
@@ -155,7 +156,7 @@ func (po *PGOperator) httpClient() (*http.Client, error) {
 	}
 	cert, err := tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 	if err != nil {
-		log.Print("initializing X509: %s", err)
+		log.Printf("initializing X509: %s", err)
 		return nil, err
 	}
 
@@ -387,10 +388,12 @@ func (po *PGOperator) CreateCluster(req CreateRequest) error {
 		ClientVersion: po.clientVer,
 		Name:          req.Name,
 		Namespace:     req.Namespace,
-		UserLabels:    po.instLabel(req.InstanceID),
+		UserLabels: map[string]string{
+			po.instLabelKey: req.InstanceID,
+		},
 	}
 	po.createRequestByPlan(req.PlanID, r)
-	log.Println("user label applied to cluster is [" + r.UserLabels + "]")
+	log.Printf("user labels applied to cluster are: %v", r.UserLabels)
 
 	log.Printf("creation request: %#v\n", r)
 	response, err := api.CreateCluster(hc, &po.pgoCreds, r)

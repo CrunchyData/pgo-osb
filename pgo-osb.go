@@ -33,7 +33,6 @@ import (
 	"github.com/pmorie/osb-broker-lib/pkg/rest"
 	"github.com/pmorie/osb-broker-lib/pkg/server"
 	prom "github.com/prometheus/client_golang/prometheus"
-	"github.com/shawn-hurley/osb-broker-k8s-lib/middleware"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clientset "k8s.io/client-go/kubernetes"
@@ -63,7 +62,7 @@ func main() {
 	flag.StringVar(&options.TLSKeyFile, "tls-private-key-file", "", "File containing the default x509 private key matching --tls-cert-file.")
 	flag.StringVar(&options.TLSCert, "tlsCert", "", "base-64 encoded PEM block to use as the certificate for TLS. If '--tlsCert' is used, then '--tlsKey' must also be used.")
 	flag.StringVar(&options.TLSKey, "tlsKey", "", "base-64 encoded PEM block to use as the private key matching the TLS certificate.")
-	flag.BoolVar(&options.AuthenticateK8SToken, "authenticate-k8s-token", false, "option to specify if the broker should validate the bearer auth token with kubernetes")
+	flag.BoolVar(&options.AuthenticateK8SToken, "authenticate-k8s-token", false, "former option to specify if the broker should validate the bearer auth token with kubernetes, disabled 4.6+")
 	flag.StringVar(&options.KubeConfig, "kube-config", "", "specify the kube config path to be used")
 	bridge.AddFlags(&options.Options)
 
@@ -131,22 +130,10 @@ func runWithContext(ctx context.Context) error {
 
 	s := server.New(api, reg)
 	if options.AuthenticateK8SToken {
-		// get k8s client
-		k8sClient, err := getKubernetesClient(options.KubeConfig)
-		if err != nil {
-			return err
-		}
-		// Create a User Info Authorizer.
-		authz := middleware.SARUserInfoAuthorizer{
-			SAR: k8sClient.AuthorizationV1().SubjectAccessReviews(),
-		}
-		// create TokenReviewMiddleware
-		tr := middleware.TokenReviewMiddleware{
-			TokenReview: k8sClient.Authentication().TokenReviews(),
-			Authorizer:  authz,
-		}
-		// Use TokenReviewMiddleware.
-		s.Router.Use(tr.Middleware)
+		// Avoid breaking invocations using this flag, but this features
+		// needs updating to current authenication standards beyond the long
+		// out-of-date token review middleware previously used
+		log.Print("option AuthenticateK8SToken has no effect in 4.6+")
 	}
 
 	log.Print("Starting broker!")
@@ -226,7 +213,8 @@ func newClient(cfg *clientrest.Config) (*clientrest.RESTClient, *runtime.Scheme,
 	config.GroupVersion = &crv1.SchemeGroupVersion
 	config.APIPath = "/apis"
 	config.ContentType = runtime.ContentTypeJSON
-	config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: serializer.NewCodecFactory(scheme)}
+	// From pkg.go.dev: "NegotiatedSerializer will be phased out as internal clients are removed from Kubernetes"
+	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme).WithoutConversion()
 
 	client, err := clientrest.RESTClientFor(&config)
 	if err != nil {
