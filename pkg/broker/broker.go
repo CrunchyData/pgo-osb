@@ -15,8 +15,6 @@ package broker
  limitations under the License.
 */
 
-import ()
-
 // BasicCred represents a common pair of username and password
 type BasicCred struct {
 	Username string
@@ -29,6 +27,7 @@ type ClusterDetails struct {
 	ClusterIP   string
 	ExternalIP  string
 	ClusterName string
+	Database    string
 }
 
 type CreateRequest struct {
