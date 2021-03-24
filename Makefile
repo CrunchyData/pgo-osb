@@ -39,7 +39,7 @@ main:
 	go install pgo-osb.go
 
 copy-bin:
-        cp $(GOBIN)/pgo-osb .
+	cp $(GOBIN)/pgo-osb .
 
 buildah-image: 
 	sudo --preserve-env buildah bud --squash \
