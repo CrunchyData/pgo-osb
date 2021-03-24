@@ -3,7 +3,7 @@ OSB_BASEOS ?= centos8
 OSB_IMAGE_PREFIX ?= crunchydata
 OSB_ROOT ?= $(CURDIR)
 PACKAGER ?= yum
-OSB_VERSION ?= 4.6.1
+OSB_VERSION ?= 4.6.2
 
 PULL ?= IfNotPresent
 
