@@ -42,15 +42,15 @@ copy-bin:
         cp $(GOBIN)/pgo-osb .
 
 buildah-image: 
-        sudo --preserve-env buildah bud --squash \
-            -f $(OSB_ROOT)/build/pgo-osb/Dockerfile \
-            -t $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) \
-            --build-arg BASEOS=$(OSB_BASEOS) \
-            --build-arg DFSET=$(DFSET) \
-            --build-arg DOCKERBASEREGISTRY=$(DOCKERBASEREGISTRY) \
-            --build-arg PACKAGER=$(PACKAGER) \
-            --build-arg RELVER=$(OSB_VERSION) \
-            $(OSB_ROOT)
+	sudo --preserve-env buildah bud --squash \
+		-f $(OSB_ROOT)/build/pgo-osb/Dockerfile \
+		-t $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) \
+		--build-arg BASEOS=$(OSB_BASEOS) \
+		--build-arg DFSET=$(DFSET) \
+		--build-arg DOCKERBASEREGISTRY=$(DOCKERBASEREGISTRY) \
+		--build-arg PACKAGER=$(PACKAGER) \
+		--build-arg RELVER=$(OSB_VERSION) \
+		$(OSB_ROOT)
 
 
 image: main copy-bin buildah-image ;
