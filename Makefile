@@ -1,5 +1,30 @@
+# Default values if not already set
+OSB_BASEOS ?= centos8
+OSB_IMAGE_PREFIX ?= crunchydata
+OSB_ROOT ?= $(CURDIR)
+PACKAGER ?= yum
+OSB_VERSION ?= 4.6.1
 
 PULL ?= IfNotPresent
+
+# Determines whether or not images should be pushed to the local docker daemon when building with
+# a tool other than docker (e.g. when building with buildah)
+IMG_PUSH_TO_DOCKER_DAEMON ?= true
+
+DOCKERBASEREGISTRY=registry.access.redhat.com/
+
+ifeq ("$(OSB_BASEOS)", "ubi8")
+        PACKAGER=dnf
+endif
+
+ifeq ("$(OSB_BASEOS)", "centos7")
+        DOCKERBASEREGISTRY=centos:
+endif
+
+ifeq ("$(OSB_BASEOS)", "centos8")
+        PACKAGER=dnf
+        DOCKERBASEREGISTRY=centos:
+endif
 
 build: ## Builds the starter pack
 	go build -i github.com/crunchydata/pgo-osb/cmd/pgo-osb
@@ -13,10 +38,26 @@ linux: ## Builds a Linux executable
 main:
 	go install pgo-osb.go
 
-image: main
-	cp $(GOBIN)/pgo-osb .
-	sudo --preserve-env buildah bud --squash -f $(OSB_ROOT)/$(OSB_BASEOS)/Dockerfile.pgo-osb.$(OSB_BASEOS) -t $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) $(OSB_ROOT)
+copy-bin:
+        cp $(GOBIN)/pgo-osb .
+
+buildah-image: 
+        sudo --preserve-env buildah bud --squash \
+            -f $(OSB_ROOT)/build/pgo-osb/Dockerfile \
+            -t $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) \
+            --build-arg BASEOS=$(OSB_BASEOS) \
+            --build-arg DFSET=$(DFSET) \
+            --build-arg DOCKERBASEREGISTRY=$(DOCKERBASEREGISTRY) \
+            --build-arg PACKAGER=$(PACKAGER) \
+            --build-arg RELVER=$(OSB_VERSION) \
+            $(OSB_ROOT)
+
+
+image: main copy-bin buildah-image ;
+# only push to docker daemon if variable PGO_PUSH_TO_DOCKER_DAEMON is set to "true"
+ifeq ("$(IMG_PUSH_TO_DOCKER_DAEMON)", "true")
 	sudo --preserve-env buildah push $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) docker-daemon:$(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)
+endif
 
 push:
 	docker push $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)

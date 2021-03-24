@@ -1,8 +1,12 @@
-FROM centos:7
+ARG BASEOS
+ARG DOCKERBASEREGISTRY
+FROM ${DOCKERBASEREGISTRY}${BASEOS}
+
+ARG RELVER
 
 LABEL Vendor="Crunchy Data Solutions" \
-        Version="4.5.1" \
-        Release="4.5.1" \
+        Version="${RELVER}" \
+        Release="${RELVER}" \
         summary="Crunchy Data pgo-osb open service broker " \
         description="Crunchy Data PostgreSQL Operator - pgo-osb "
 
