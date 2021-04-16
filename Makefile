@@ -1,5 +1,6 @@
 # Default values if not already set
 OSB_BASEOS ?= centos8
+BASE_IMAGE_OS ?= $(OSB_BASEOS)
 OSB_IMAGE_PREFIX ?= crunchydata
 OSB_ROOT ?= $(CURDIR)
 PACKAGER ?= yum
@@ -14,7 +15,8 @@ IMG_PUSH_TO_DOCKER_DAEMON ?= true
 DOCKERBASEREGISTRY=registry.access.redhat.com/
 
 ifeq ("$(OSB_BASEOS)", "ubi8")
-        PACKAGER=dnf
+        PACKAGER=microdnf
+        BASE_IMAGE_OS=ubi8-minimal
 endif
 
 ifeq ("$(OSB_BASEOS)", "centos7")
@@ -48,6 +50,7 @@ buildah-image:
 		--build-arg BASEOS=$(OSB_BASEOS) \
 		--build-arg DFSET=$(DFSET) \
 		--build-arg DOCKERBASEREGISTRY=$(DOCKERBASEREGISTRY) \
+		--build-arg BASE_IMAGE_OS=$(BASE_IMAGE_OS) \
 		--build-arg PACKAGER=$(PACKAGER) \
 		--build-arg RELVER=$(OSB_VERSION) \
 		$(OSB_ROOT)
