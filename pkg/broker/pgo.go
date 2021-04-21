@@ -392,6 +392,7 @@ func (po *PGOperator) CreateCluster(req CreateRequest) error {
 		UserLabels: map[string]string{
 			po.instLabelKey: req.InstanceID,
 		},
+		AutofailFlag: true,
 	}
 	po.createRequestByPlan(req.PlanID, r)
 	log.Printf("user labels applied to cluster are: %v", r.UserLabels)
