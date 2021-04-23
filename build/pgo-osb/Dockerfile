@@ -10,6 +10,9 @@ LABEL Vendor="Crunchy Data Solutions" \
         summary="Crunchy Data pgo-osb open service broker " \
         description="Crunchy Data PostgreSQL Operator - pgo-osb "
 
+COPY redhat/atomic/help.1 /help.1
+COPY redhat/atomic/help.md /help.md
+COPY licenses /licenses
 
 ADD ./pgo-osb /usr/local/bin/
 

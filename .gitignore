@@ -1,2 +1,4 @@
 ./pgo-osb
 pgo-osb
+licenses/*
+!licenses/LICENSE.txt
