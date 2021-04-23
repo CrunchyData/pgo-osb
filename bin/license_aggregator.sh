@@ -8,7 +8,7 @@ OUT_DIR=licenses
 set -e
 
 # Clean up before we start our work
-rm -rf $OUT_DIR/*
+rm -rf $OUT_DIR/*/
 
 # Get any file in the vendor directory with the word "license" in it.  Note that we'll also keep its path
 myLicenses=$(find $SCAN_DIR -type f | grep -i license)
