@@ -56,7 +56,7 @@ buildah-image:
 		$(OSB_ROOT)
 
 
-image: main copy-bin buildah-image ;
+image: main license copy-bin buildah-image ;
 # only push to docker daemon if variable PGO_PUSH_TO_DOCKER_DAEMON is set to "true"
 ifeq ("$(IMG_PUSH_TO_DOCKER_DAEMON)", "true")
 	sudo --preserve-env buildah push $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) docker-daemon:$(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG)
@@ -91,6 +91,9 @@ bind: ## Creates a binding
 bind2: ## Creates a binding
 	expenv -f manifests/service-binding2.yaml | kubectl create -f -
 
+license: ## Aggregate all of the license files used to build the go binary
+	./bin/license_aggregator.sh
+
 help: ## Shows the help
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'
 	@echo ''
@@ -100,4 +103,4 @@ help: ## Shows the help
         awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ''
 
-.PHONY: deploy build test linux image clean push deploy-helm deploy-openshift create-ns provision bind help
+.PHONY: deploy build test linux image clean push deploy-helm deploy-openshift create-ns provision bind license help
