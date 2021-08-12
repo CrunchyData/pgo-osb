@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/expenv v1.2.0 // indirect
-	github.com/crunchydata/postgres-operator v0.0.0-20210322192402-725a8dafb643
+	github.com/crunchydata/postgres-operator v0.0.0-20210722210402-f1961a93ec74
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -31,8 +31,8 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.3.0
-	k8s.io/apimachinery v0.20.1
-	k8s.io/client-go v0.20.1
+	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/apimachinery v0.21.0
+	k8s.io/client-go v0.21.0
 	sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e // indirect
 )

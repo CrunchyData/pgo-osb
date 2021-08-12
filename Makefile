@@ -4,7 +4,7 @@ BASE_IMAGE_OS ?= $(OSB_BASEOS)
 OSB_IMAGE_PREFIX ?= crunchydata
 OSB_ROOT ?= $(CURDIR)
 PACKAGER ?= yum
-OSB_VERSION ?= 4.6.2
+OSB_VERSION ?= 4.7.1
 
 PULL ?= IfNotPresent
 
@@ -43,7 +43,7 @@ main:
 copy-bin:
 	cp $(GOBIN)/pgo-osb .
 
-buildah-image: 
+buildah-image:
 	sudo --preserve-env buildah bud --squash \
 		-f $(OSB_ROOT)/build/pgo-osb/Dockerfile \
 		-t $(OSB_IMAGE_PREFIX)/pgo-osb:$(OSB_IMAGE_TAG) \
