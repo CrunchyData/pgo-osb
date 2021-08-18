@@ -147,6 +147,8 @@ github.com/crunchydata/postgres-operator v0.0.0-20210322192402-725a8dafb643 h1:u
 github.com/crunchydata/postgres-operator v0.0.0-20210322192402-725a8dafb643/go.mod h1:1w745gcsl0qg208T1s4wndGr8MlUJQJ9D+BDtbcvfb8=
 github.com/crunchydata/postgres-operator v0.0.0-20210722210402-f1961a93ec74 h1:Fti7b54I2gyRtLuMNm3yMJmZbZ/whnNdrYDn/K0Nqj4=
 github.com/crunchydata/postgres-operator v0.0.0-20210722210402-f1961a93ec74/go.mod h1:rJUN8EPp0LBfVocwasbQky+fHvQl1IQwHq042r0Krds=
+github.com/crunchydata/postgres-operator v0.0.0-20210809202111-422095e054ee h1:3YCtY8CdGZfIifePWOSlj/hRJdSOyrD7pntF/PPQe5M=
+github.com/crunchydata/postgres-operator v0.0.0-20210809202111-422095e054ee/go.mod h1:rJUN8EPp0LBfVocwasbQky+fHvQl1IQwHq042r0Krds=
 github.com/crunchydata/postgres-operator v1.3.3-0.20210305202518-7d497f9179f8 h1:jT8V1SlbvaCMa3Qw3XQU6HnMSzSni3FJRRXf92hYBPM=
 github.com/crunchydata/postgres-operator v1.3.3-0.20210305202518-7d497f9179f8/go.mod h1:1w745gcsl0qg208T1s4wndGr8MlUJQJ9D+BDtbcvfb8=
 github.com/crunchydata/postgres-operator v4.5.0+incompatible h1:lBjfQELcDXs1n/x9Kd/QhUtNXy4xuNhx2ob6UavGoC8=

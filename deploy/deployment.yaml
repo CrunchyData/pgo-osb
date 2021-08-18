@@ -38,7 +38,7 @@ spec:
         - --PGO_APISERVER_URL
         - "https://postgres-operator:8443"
         - --PGO_APISERVER_VERSION
-        - "4.7.1"
+        - "4.7.2"
         - --logtostderr
         - --tls-cert-file
         - "/var/run/pgo-osb/server.crt"

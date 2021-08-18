@@ -4,7 +4,7 @@ BASE_IMAGE_OS ?= $(OSB_BASEOS)
 OSB_IMAGE_PREFIX ?= crunchydata
 OSB_ROOT ?= $(CURDIR)
 PACKAGER ?= yum
-OSB_VERSION ?= 4.7.1
+OSB_VERSION ?= 4.7.2
 
 PULL ?= IfNotPresent
 
