@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/expenv v1.2.0 // indirect
-	github.com/crunchydata/postgres-operator v0.0.0-20210809202111-422095e054ee
+	github.com/crunchydata/postgres-operator v0.0.0-20210915201756-97958bb30b66
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
